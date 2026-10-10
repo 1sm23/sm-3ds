@@ -141,6 +141,9 @@ int main(int argc, char **argv) {
   Tap(192 + 15, 198 + 6);            // back to 1X
   TapTab(kStatus);
   Shot("status");
+  Tap(299, 104);                     // "?" beside ITEMS: the tab's help
+  Shot("status help window, English");
+  Tap(160, 222);                     // CLOSE
   {   // the low-energy blink of the tab buttons (P1.10)
     const uint16 health = samus_health;
     g_gameplay = true;
@@ -266,6 +269,9 @@ int main(int argc, char **argv) {
   TapTab(kOptions);
   Tap(8 + 5, 30 + 2 * 34 + 5);       // DISPLAY -> PIXEL PERFECT
   Shot("options");
+  Tap(312 - 17, 30 + 5);             // "?" beside CONTROLS: the window
+  Shot("controls window, English");
+  Tap(160, 220);                     // CLOSE
   Tap(160, 180);                     // RESET GAME
   Shot("options, reset window");
   Tap(216, 148);                     // cancel

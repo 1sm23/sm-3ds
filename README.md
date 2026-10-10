@@ -1,34 +1,56 @@
 # sm-3ds
 
-![ceres station on Azahar](screenshots/sm-3ds.gif)
+![Super Metroid 3DS Widescreen Gameplay](screenshots/gameplay_wide.png)
 
 A native Nintendo 3DS port of **Super Metroid**, built on
 [snesrev's C reimplementation](https://github.com/snesrev/sm) and
 [CharlesAverill's 3DS port](https://github.com/CharlesAverill/sm-3ds).
-Stereoscopic 3D is the long-term goal; for now the game runs in 2D.
+Features **full stereoscopic 3D with per-layer depth** and **widescreen gameplay (400x240)**.
 
 **The ROM is not included.** You need your own copy of Super Metroid.
 
-## Status
+---
 
-First stable release `v0.1.2`; still early. Tested on a New 3DS and a 2DS:
+## Status & Features (v0.6.1)
 
-- Graphics are drawn by the 3DS GPU. 60 fps on New 3DS; on Old 3DS/2DS about 60 fps
-  in gameplay and 50-55 on the title, the intro and Ceres.
-- Sound is the emulated SNES sound chip, unchanged, and plays cleanly on Old 3DS too.
-- Saves at save stations persist across power cycles; save states (10 slots)
-  work.
-- The bottom screen has tabs for the map, status, save states and options (plus
-  debug tools in test builds).
+- **Stereoscopic 3D:** True per-layer depth using the 3DS parallax barrier hardware. Runs at a rock-solid **60 fps on New 3DS** and **60 fps in gameplay on Old 3DS / 2DS**.
+- **Widescreen Mode (VIEW: WIDE):** Expands the playfield laterally to 336 px, filling the native 5:3 400x240 top screen of the 3DS while keeping enemies and projectiles alive in the extended margins. Original 4:3 (256x224) aspect ratio is also selectable (`VIEW: ORIGINAL`).
+- **Modern Controls Scheme:** Play with modern ergonomics (Samus runs by default, L aims diagonally, R + X / Y / B fires missiles / super missiles / grapple / X-ray, Y rolls into morph ball) or choose the classic SNES button layout.
+- **Touchscreen Bottom UI:**
+  - **Status Tab:** Real-time energy, reserve tanks (AUTO / MANUAL), touch weapon selection, and **long-press to equip / unequip items and beams** directly without entering the pause menu. Includes a dedicated "?" help window.
+  - **Map Tab:** Detailed vector map with room outlines, zoom levels (1X, 2X, 3X), doors, map stations, and an **item tracker window** counting items found per area (with optional SPOILERS mode).
+  - **Save States Tab:** Unlimited save states with in-game screenshot thumbnails, gameplay stats (time, energy, missiles, area), and color marks.
+  - **RetroAchievements Tab:** Full RetroAchievements support (softcore) with achievement cards, progress tracking, and on-screen popups (customizable to top or bottom screen).
+  - **Options Tab:** Controls scheme, audio toggle, frame pacing (AUTO, LOCK 30, NO SKIP), CPU 804 MHz mode (New 3DS), display modes (Pixel Perfect / Scaled), view modes (Original / WIDE), FPS counter, and language selector.
+- **Self-Updater:** Check and install the latest updates directly from the console (OPTIONS -> UPDATES), complete with version notes.
+- **Multilingual Support:** English, Spanish, Catalan, French, Portuguese, and Japanese. Custom translations can also be loaded from the SD card (`lang/` folder).
+- **Sound:** Authentic emulated SNES SPC700 sound chip playback.
 
-Bugs found while playing go to the
-[issue tracker](https://github.com/tinaut1986/sm-3ds/issues). The roadmap is
-[`docs/PLAN.md`](docs/PLAN.md).
+---
+
+## Screenshots
+
+| Widescreen Gameplay (Top Screen) | Status & Item Equipment (Bottom Screen) |
+|:---:|:---:|
+| ![Gameplay Wide](screenshots/gameplay_wide.png) | ![Status Tab](screenshots/bottom_status.png) |
+
+| Interactive Map & Tracker | Collected Items Window |
+|:---:|:---:|
+| ![Map Tab](screenshots/bottom_map.png) | ![Items Tracker](screenshots/bottom_items_tracker.png) |
+
+| Save States with Visual Thumbnails | RetroAchievements |
+|:---:|:---:|
+| ![Save States](screenshots/bottom_states.png) | ![Achievements](screenshots/bottom_achievements.png) |
+
+| Options & Display Settings | Status Touch Help Window |
+|:---:|:---:|
+| ![Options Tab](screenshots/bottom_options.png) | ![Status Help](screenshots/bottom_status_help.png) |
+
+---
 
 ## Installing
 
-You need a 3DS with custom firmware (e.g. Luma3DS) and FBI or another CIA
-installer.
+You need a 3DS with custom firmware (e.g. Luma3DS) and FBI or another CIA installer.
 
 1. Download `sm-3ds-<version>.cia` from the
    [Releases page](https://github.com/tinaut1986/sm-3ds/releases), or scan the
@@ -54,40 +76,49 @@ Everything else the game writes lives in the same folder:
 | Path | What |
 |---|---|
 | `saves/sm.srm` | in-game save files (the three save slots) |
-| `saves/save0.sav` ... `save9.sav` | save states (States tab), each with a `.txt` description (and a `.rap` with the achievements' progress) |
+| `saves/save0.sav` ... `saveN.sav` | save states (States tab), each with `.png` thumbnail and metadata |
 | `config.ini` | options from the bottom screen (language included) |
-| `retroachievements.ini` | RetroAchievements on/off, user name and login token (keep it private: the token logs in as you) |
+| `retroachievements.ini` | RetroAchievements on/off, user name and login token |
+| `lang/` | custom external language files (`.txt`) |
 | `debug/` | logs, perf CSVs and dumps from the Debug tab |
+
+---
 
 ## Controls
 
-The 3DS buttons map to the SNES buttons of the same name (D-pad, A, B, X, Y,
-L, R, Start, Select). The game's own controller settings still apply. The
-bottom screen is operated by touch: save states on the States tab (as many as you like:
-+ NEW saves one, a tap on a state opens it with its screenshot and what Samus had, a colour
-mark, and LOAD, SAVE OVER and DELETE, each confirmed with a second tap). The Options tab has frame
-pacing (AUTO, LOCK 30 or NO SKIP), audio (with a loudspeaker to switch it quickly), the FPS counter and the
-corner it sits in, the 804 MHz mode (New 3DS), the language, the image (PIXEL P. or SCALED) and view (ORIGINAL or
-WIDE), the updates (AUTO or NO, STABLE releases or + BETAS, and a button to look now; a newer one asks before
-installing), the HUD (it can hide, on the top screen, the half the open bottom tab shows: the energy and weapons on STATUS,
-the minimap on MAP) and reset.
+The port offers two control schemes selectable in **OPTIONS -> CONTROLS** (or by tapping the "?" button beside CONTROLS):
 
-### Languages
+- **CLASSIC:** Maps 3DS buttons directly to original SNES buttons (D-pad/Circle Pad moves, B runs, A jumps, X fires, Select switches weapon, Y cancels weapon, R/L aim diagonally).
+- **MODERN:** Samus runs by default (no run button needed), L aims diagonally, R + X / Y / B fires missiles / super missiles / special weapons, Y rolls into morph ball.
 
-OPTIONS -> LANGUAGE switches the bottom screen and the game's message boxes (items,
-stations, the save prompt) between English, Spanish, Catalan, French and Portuguese. The
-ROM is not modified (the translation is drawn on screen only), so saves and achievements
-are the same in every language.
+The bottom screen is operated entirely by touch:
+- **STATUS:** Tap weapons to equip them. **Hold down (0.5s)** on any item or beam to toggle it on/off without pausing. Tap reserve tanks to switch AUTO / MANUAL.
+- **MAP:** Tap and drag to explore the map. Tap the zoom button to toggle 1X, 2X, and 3X zoom. Tap the item tracker button to view collected items by area.
+- **STATES:** Tap `+ NEW` to save a state. Tap an existing state to open its detail window, load it, overwrite it, or assign a color tag.
 
-### RetroAchievements
+---
 
-The trophy tab runs the existing Super Metroid achievement set from
-[RetroAchievements](https://retroachievements.org) (softcore only: unofficial ports
-cannot earn hardcore). Tap LOG IN, type your user name and password with the
-system keyboard; the password is sent once and only the token the server returns is
-kept. Unlocks made while offline are sent when the connection comes back. In
-builds with debug tools, using a cheat or the teleport pauses achievements until the
-app is restarted.
+## Languages
+
+OPTIONS -> LANGUAGE switches the bottom screen and the game's message boxes (items, stations, save prompt) between:
+- English
+- Spanish (Español)
+- Catalan (Català)
+- French (Français)
+- Portuguese (Português)
+- Japanese (日本語)
+
+Custom language files can also be added as UTF-8 text files on the SD card in `sdmc:/3ds/Super Metroid 3DS/lang/` without recompiling the game.
+
+---
+
+## RetroAchievements
+
+The trophy tab connects directly to [RetroAchievements](https://retroachievements.org) (softcore mode). Tap **LOG IN** and enter your credentials using the 3DS software keyboard.
+- Unlocks made while offline are automatically queued and synchronized once an internet connection is established.
+- Unlock notifications can be displayed as popups on the top screen or over the bottom screen tab bar.
+
+---
 
 ## Building
 
@@ -103,60 +134,21 @@ cd sm-3ds
 ./build_3ds.sh          # interactive: build, optionally find the 3DS and send it
 ```
 
-`build_3ds.sh` asks for debug (the default: debug tab, teleport, cheats on the
-Status tab, see [`docs/debug-tools.md`](docs/debug-tools.md)) or production,
-builds the CIA
-(`output/SuperMetroid3DSPort.cia`). With ftpd or FBI's FTP server running on
-the console, it can scan the local network for it and upload the CIA to
-`/cias/sm-3ds-<version>.cia`. Non-interactive forms:
+Or with make directly:
 
 ```sh
-./build_3ds.sh --no-ftp                  # build only (debug)
-./build_3ds.sh --mode prod --no-ftp      # production build
-./build_3ds.sh --ftp 192.168.1.50        # build and upload (port 5000)
-./build_3ds.sh --ftp                     # upload to the last IP used
-./build_3ds.sh --help
+make -j FULL_NATIVE=1 cia                              # release CIA
+make -j FULL_NATIVE=1 DEBUG_TOOLS=1 cia                # debug build with cheats/teleport
+make -j FULL_NATIVE=1 ftp FTP_HOST=192.168.1.50        # build and upload via FTP
 ```
 
-Or with make directly (`DEVKITPRO` defaults to `/opt/devkitpro`):
+---
 
-```sh
-make -j FULL_NATIVE=1 cia                              # -> output/SuperMetroid3DSPort.cia
-make -j FULL_NATIVE=1 DEBUG_TOOLS=1 cia                # with the debug tools
-make -j FULL_NATIVE=1 ftp FTP_HOST=192.168.1.50        # build and upload
-make print-version
-```
+## Credits and License
 
-`FULL_NATIVE=1` runs only the C game code, never the ROM on the bundled SNES
-CPU emulator; release builds use it.
+- [snesrev](https://github.com/snesrev/sm): the C reimplementation of the game (`sm/`, MIT).
+- [Charles Averill](https://github.com/CharlesAverill/sm-3ds): the initial 3DS port skeleton.
+- [rcheevos](https://github.com/RetroAchievements/rcheevos): RetroAchievements library (MIT).
+- The 5x7 UI font, asset tooling, and UI framework come from the author's [Metroid: Zero Mission 3DS port](https://github.com/tinaut1986/mzm).
 
-### Tests
-
-`make test SM_ROM=/path/to/your/rom.sfc` runs the host regression suite (about 90 s):
-the GPU renderer against the CPU one over every room and a new game, the sound chip
-against the original, the music queue under repeated teleports. See
-[`tools/test/README.md`](tools/test/README.md). Nothing of the ROM is stored.
-
-### Versions
-
-The version comes from git: a tag gives `v0.1.0`; a build from
-`release/v0.1.0` (or a branch cut from it) gives
-`v0.1.0-dev.<commits since main>[.<commits on the branch>]+<hash>`. It is shown
-in the HOME menu description, on the Debug tab and in the debug logs. Pushing a
-`v*` tag builds the CIA on GitHub Actions and publishes a release (Beta unless
-the tag is on `main`).
-
-## Credits and license
-
-- [snesrev](https://github.com/snesrev/sm): the C reimplementation of the
-  game (`sm/`, MIT, see `sm/LICENSE.txt`, which also carries the Opus BSD
-  license).
-- [Charles Averill](https://github.com/CharlesAverill/sm-3ds): the original
-  3DS port this one started from.
-- [rcheevos](https://github.com/RetroAchievements/rcheevos): the RetroAchievements
-  library (`third_party/rcheevos`, MIT).
-- The 5x7 UI font and much of the tooling come from the author's
-  [Metroid: Zero Mission 3DS port](https://github.com/tinaut1986/mzm).
-
-This project's code is MIT (see `LICENSE`). Super Metroid is © Nintendo; this
-project contains no game data.
+Super Metroid is © Nintendo; this project contains no copyrighted game data. Code is licensed under MIT (see `LICENSE`).
