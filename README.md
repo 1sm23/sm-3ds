@@ -38,13 +38,17 @@ Features **full stereoscopic 3D with per-layer depth** and **widescreen gameplay
 |:---:|:---:|
 | ![Map Tab](screenshots/bottom_map.png) | ![Items Tracker](screenshots/bottom_items_tracker.png) |
 
-| Save States with Visual Thumbnails | RetroAchievements |
+| Save States List | Save State Detail & Load Window |
 |:---:|:---:|
-| ![Save States](screenshots/bottom_states.png) | ![Achievements](screenshots/bottom_achievements.png) |
+| ![Save States](screenshots/bottom_states.png) | ![Save State Load](screenshots/bottom_state_load.png) |
 
-| Options & Display Settings | Status Touch Help Window |
+| RetroAchievements | Options & Display Settings |
 |:---:|:---:|
-| ![Options Tab](screenshots/bottom_options.png) | ![Status Help](screenshots/bottom_status_help.png) |
+| ![Achievements](screenshots/bottom_achievements.png) | ![Options Tab](screenshots/bottom_options.png) |
+
+| Status Touch Help Window | Controls Help Window |
+|:---:|:---:|
+| ![Status Help](screenshots/bottom_status_help.png) | ![Controls Help](screenshots/bottom_controls_help.png) |
 
 ---
 

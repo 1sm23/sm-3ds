@@ -19,6 +19,18 @@ gcc -O1 -fno-strict-aliasing -I"$OUT" -I"$ROOT/tools/ui-preview/fake" -I"$ROOT/s
     -w $SRCS \
     "$ROOT/source/bottom_ui.c" "$ROOT/source/ui_draw.c" "$ROOT/source/ui_font.c" "$ROOT/source/ui_lang.c" "$ROOT/source/lang_file.c" -DLANG_DIR="\"$ROOT/romfs/lang\"" "$ROOT/source/states_store.c" "$ROOT/tools/ui-preview/fake/retro_ach_stub.c" "$ROOT/tools/ui-preview/fake/updater_stub.c" "$ROOT/source/cheats.c" "$ROOT/source/sm_map.c" "$ROOT/source/sm_warp.c" "$ROOT/source/debug_tools.c" "$ROOT/source/scene_rec.c" "$ROOT/source/stereo_depth.c" "$ROOT/source/modern_controls.c" "$ROOT/source/game_text.c" "$ROOT/source/game_text_screens.c" \
     "$ROOT/tools/ui-preview/preview.c" -o "$OUT/preview" -lm
+python3 -c "
+import os, struct
+from PIL import Image
+p = '$ROOT/screenshots/gameplay_wide.png'
+if os.path.exists(p):
+    im = Image.open(p).convert('RGB').resize((200, 120), Image.BILINEAR)
+    with open('$OUT/state_shot.bin', 'wb') as f:
+        for y in range(120):
+            for x in range(200):
+                r, g, b = im.getpixel((x, y))
+                f.write(struct.pack('<H', ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3)))
+"
 (cd "$OUT" && rm -f shot*.ppm shot*.png config.ini && ./preview "$SM_ROM" && python3 - <<'PY'
 from PIL import Image
 import glob
