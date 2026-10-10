@@ -90,6 +90,10 @@ RESOURCES := resources
 # Resource Setup
 #---------------------------------------------------------------------------------
 APP_INFO := $(RESOURCES)/AppInfo
+# HOME Menu assets. The banner sound must stay under about 3 s (a 3.5 s one did not play). The HOME Menu caches
+# the icon, banner and sound per title and only reads them again when the installed title's version goes up
+# (-major/-minor/-micro below, from the version): installing a build of the same version over the old one keeps
+# the old ones, so try new assets with VERSION=vX.Y.Z+1-test.
 BANNER_AUDIO := $(RESOURCES)/audio/audio
 BANNER_IMAGE := $(RESOURCES)/banner
 ICON := $(RESOURCES)/icon.png
