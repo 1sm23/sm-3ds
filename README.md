@@ -34,7 +34,7 @@ Features **full stereoscopic 3D with per-layer depth** and **widescreen gameplay
 |:---:|:---:|
 | ![Gameplay Wide](screenshots/gameplay_wide.png) | ![Status Tab](screenshots/bottom_status.png) |
 
-| Interactive Map & Tracker | Collected Items Window |
+| Interactive Map & Tracker | Collected Items Tracker (SPOILERS Mode) |
 |:---:|:---:|
 | ![Map Tab](screenshots/bottom_map.png) | ![Items Tracker](screenshots/bottom_items_tracker.png) |
 
