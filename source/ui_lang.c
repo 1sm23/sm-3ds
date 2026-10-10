@@ -170,6 +170,16 @@ static const char *const kText[kStrCount] = {
   [kStrCtlXray] = "X-RAY SCOPE",
   [kStrCtlMissileKind] = "MISSILE OR SUPER MISSILE",
   [kStrCtlConfigNote] = "BUTTONS FROM THE GAME'S CONTROLLER SETTING",
+  // STATUS -> "?": what can be touched on the tab, for both schemes and for each, paragraphs wrapped to the window
+  // (about 14 lines of 47 characters in all).
+  [kStrStHelpTitle] = "THE STATUS TAB",
+  [kStrStHelpBoth] = "BOTH CONTROL SCHEMES",
+  [kStrStHelpReserve] = "AUTO / MANUAL: TAP IT TO SWITCH HOW THE RESERVE TANKS ARE USED.",
+  [kStrStHelpEquip] = "ITEMS AND BEAMS: HOLD ONE DOWN TO SWITCH IT ON OR OFF, AS IN THE PAUSE MENU. GREEN IS ON, YELLOW IS OFF.",
+  [kStrStHelpClassic] = "CLASSIC CONTROLS",
+  [kStrStHelpClassicTap] = "MISSILES, SUPER MISSILES, POWER BOMBS, GRAPPLING BEAM AND X-RAY SCOPE: TAP ONE TO SELECT IT, AS SELECT DOES, AND AGAIN TO PUT IT AWAY.",
+  [kStrStHelpModern] = "MODERN CONTROLS",
+  [kStrStHelpModernTap] = "MISSILES AND SUPER MISSILES: TAP ONE TO CHOOSE WHAT R + X FIRES. THE OTHER WEAPONS ARE ON THE BUTTONS.",
 };
 
 static const char *g_tr[kStrCount];   // the current language's, resolved by UiLang_Set

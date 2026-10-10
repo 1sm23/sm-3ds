@@ -32,6 +32,7 @@
 #include "stereo_depth.h"
 #include "game_text.h"
 #include "modern_controls.h"
+#include "cheats.h"
 #include "ui_lang.h"
 
 bool g_debug_flag, g_is_turbo, g_want_dump_memmap_flags, g_new_ppu = true, g_other_image;
@@ -1217,6 +1218,21 @@ int main(int argc, char **argv) {
         samus_super_missiles = samus_max_super_missiles = 5, AddSuperMissilesToHudTilemap();
         samus_power_bombs = samus_max_power_bombs = 5, AddPowerBombsToHudTilemap();
       }
+      // EQUIP=items:beams@frame: on that frame, asks the game to switch those items / beams (hex masks) on or
+      // off as a long press on STATUS does (Equip_RequestToggle); BEAMS=hex: those beams collected and on
+      // from frame 1. EQUIP_TRACE=1 prints the equipment and the suit palette every 5 frames.
+      if (getenv("BEAMS") && k == 1) {
+        const int b = (int)strtol(getenv("BEAMS"), 0, 16);
+        collected_beams |= b, equipped_beams |= b;
+      }
+      if (getenv("EQUIP")) {
+        unsigned ei = 0, eb = 0;
+        int at = -1;
+        if (sscanf(getenv("EQUIP"), "%x:%x@%d", &ei, &eb, &at) == 3 && k == at) Equip_RequestToggle((uint16)ei, (uint16)eb);
+      }
+      if (getenv("EQUIP_TRACE") && k % 5 == 0)
+        printf("  k%d items %04x/%04x beams %04x/%04x suit pal %d\n", k, equipped_items, collected_items, equipped_beams,
+               collected_beams, (int)samus_suit_palette_index);
       // XRAY=1: X-ray scope collected, equipped and selected from frame 1 (hold Y, 0x02, to use it).
       if (getenv("XRAY") && k == 1) {
         collected_items |= 0x8000, equipped_items |= 0x8000;
