@@ -109,8 +109,14 @@ int main(int argc, char **argv) {
   // Fourteen states with different marks, areas and times, a screenshot on every other one.
   mkdir("saves", 0777);
   static uint16_t shot[kStateShotW * kStateShotH];
-  for (int i = 0; i < kStateShotH; i++)
-    for (int j = 0; j < kStateShotW; j++) shot[i * kStateShotW + j] = (uint16_t)((j * 31 / kStateShotW) << 11 | (i * 63 / kStateShotH) << 5 | 12);
+  FILE *fshot = fopen("state_shot.bin", "rb");
+  if (fshot && fread(shot, 2, kStateShotW * kStateShotH, fshot) == (size_t)(kStateShotW * kStateShotH)) {
+    fclose(fshot);
+  } else {
+    if (fshot) fclose(fshot);
+    for (int i = 0; i < kStateShotH; i++)
+      for (int j = 0; j < kStateShotW; j++) shot[i * kStateShotW + j] = (uint16_t)((j * 31 / kStateShotW) << 11 | (i * 63 / kStateShotH) << 5 | 12);
+  }
   for (int i = 0; i < 14; i++) {
     StateInfo si = { .id = i, .has_info = i != 5, .saved_at = 1759400000 + i * 7200 + (i % 3) * 86400, .area = (unsigned)(i % 6),
                      .room = 0x10 + i * 3, .health = 99 + i * 20, .max_health = 299, .reserve = i % 2 ? 50 : 0, .missiles = 5 + i,
