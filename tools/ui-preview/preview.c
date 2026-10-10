@@ -350,6 +350,10 @@ int main(int argc, char **argv) {
     TapTab(kStatus);
     snprintf(what, sizeof(what), "status, %s, %s controls", UiLang_Name(g_ui_lang), ModernControls_On() ? "modern" : "classic");
     Shot(what);
+    Tap(299, 104);                   // "?" beside ITEMS: the tab's help
+    snprintf(what, sizeof(what), "status help window, %s", UiLang_Name(g_ui_lang));
+    Shot(what);
+    Tap(160, 222);                   // CLOSE
     TapTab(kStates);
     snprintf(what, sizeof(what), "states, %s", UiLang_Name(g_ui_lang));
     Shot(what);

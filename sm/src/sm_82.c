@@ -845,8 +845,31 @@ CoroutineRet GameState_28_Unused(void) {  // 0x828B3F
   return kCoroutineNone;
 }
 
+RtlEquipToggle g_rtl_equip_toggle;   // 3DS port, see sm_rtl.h
+
+// 3DS port: the frontend's equip / unequip (sm_rtl.h), with the equipment screen's rules.
+static void TakeEquipToggle(void) {
+  RtlEquipToggle r = g_rtl_equip_toggle;
+  g_rtl_equip_toggle.items = g_rtl_equip_toggle.beams = 0;
+  if (!(r.items | r.beams) || (uint16)(nmi_frame_counter_word - r.frame) > 2 || time_is_frozen_flag)
+    return;
+  const uint16 items = r.items & collected_items & ~0xC000;   // the grapple and the X-ray are HUD items
+  const uint16 beams = hyper_beam_flag ? 0 : r.beams & collected_beams;
+  if (!(items | beams))
+    return;
+  equipped_items ^= items;
+  equipped_beams ^= beams;
+  if ((beams & 4) && (equipped_beams & 4))   // Spazer and Plasma never together
+    equipped_beams &= ~8;
+  if ((beams & 8) && (equipped_beams & 8))
+    equipped_beams &= ~4;
+  UpdateBeamTilesAndPalette();
+  SamusFunc_E633();
+}
+
 CoroutineRet GameState_8_MainGameplay(void) {  // 0x828B44
   COROUTINE_BEGIN(coroutine_state_1, 0);
+  TakeEquipToggle();   // 3DS port
   DetermineWhichEnemiesToProcess();
   if (1) { // !DebugHandler()) {
     PaletteFxHandler();

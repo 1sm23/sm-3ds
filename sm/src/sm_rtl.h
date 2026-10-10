@@ -216,6 +216,15 @@ int RtlCtlBinding(int action);
 // handling the HUD selection: a cutscene, the pause menu) is dropped. item < 0 = none.
 typedef struct { int8 item; uint16 frame; } RtlHudSelect;
 extern RtlHudSelect g_rtl_hud_select;
+// 3DS port: items and beams to equip or unequip, asked for by the frontend (a long press on the
+// bottom screen's STATUS tab), as the pause menu's equipment screen would: GameState_8_MainGameplay
+// takes it at the start of its next frame, toggles only what Samus has and the equipment screen
+// lists (not the grapple or the X-ray; no beam while the hyper beam is on), keeps Spazer and Plasma
+// apart, then refreshes Samus and the beam as unpausing does (SamusFunc_E633,
+// UpdateBeamTilesAndPalette). `frame` is nmi_frame_counter_word when asked; a request not taken
+// within 2 frames (no gameplay: a door, the pause menu) is dropped.
+typedef struct { uint16 items, beams, frame; } RtlEquipToggle;
+extern RtlEquipToggle g_rtl_equip_toggle;
 // 3DS port, modern controls (source/modern_controls.c, docs/modern-controls.md). g_rtl_hud_marked:
 // bit n = HUD item n is drawn as marked (BG3 palette 0, amber) while it is not the selected one; 0 with the
 // original controls. g_rtl_hud_quiet: no click when the selection changes (the modern buttons change
