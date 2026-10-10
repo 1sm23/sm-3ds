@@ -146,6 +146,17 @@ bool Hud_RequestSelect(int item) {
   return true;
 }
 
+bool Equip_RequestToggle(uint16_t items, uint16_t beams) {
+  if (game_state != 0x08 || !(items | beams)) return false;
+  g_rtl_equip_toggle.frame = nmi_frame_counter_word;
+  g_rtl_equip_toggle.items = items;
+  g_rtl_equip_toggle.beams = beams;
+  return true;
+}
+
+bool Equip_CanToggleItem(uint16_t mask) { return (collected_items & mask) && !(mask & 0xC000); }
+bool Equip_CanToggleBeam(uint16_t mask) { return (collected_beams & mask) != 0; }
+
 bool Hud_ToggleReserveMode(void) {
   if (game_state != 0x08 || !samus_max_reserve_health) return false;
   if (reserve_health_mode == 1) {

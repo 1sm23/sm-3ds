@@ -57,6 +57,14 @@ bool Cheats_GiveAll(void);
 enum { kSmHudNone, kSmHudMissiles, kSmHudSupers, kSmHudPowerBombs, kSmHudGrapple, kSmHudXray };
 bool Hud_RequestSelect(int item);
 
+// Not a cheat: the pause menu's equipment screen, for a long press on the bottom screen. Asks the
+// game to switch these items / beams on or off (masks of equipped_items / equipped_beams) in its
+// next frame (g_rtl_equip_toggle), with that screen's rules. False outside of a room.
+bool Equip_RequestToggle(uint16_t items, uint16_t beams);
+// Whether the equipment screen lets this item / beam be switched (collected; not the grapple or the X-ray).
+bool Equip_CanToggleItem(uint16_t mask);
+bool Equip_CanToggleBeam(uint16_t mask);
+
 // The reserve tanks' mode, AUTO <-> MANUAL, as the pause menu's tanks screen switches it (the HUD's
 // AUTO mark goes with it). False outside of a room or without reserve tanks.
 bool Hud_ToggleReserveMode(void);

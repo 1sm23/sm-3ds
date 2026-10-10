@@ -21,7 +21,8 @@
 # FORCE_STATE=n sets the game state on frame 5 of the rooms mode (38: the ending).
 # SRAM_SAVE=n saves the game to file n (0-2) on frame 2 of the rooms mode (saves/sm.srm).
 # SAMUS_AT=x,y puts Samus there on frame 1 (SCROLLS_OPEN=1: all scroll screens blue;
-# ITEMS=hex: items given; AMMO=1: missiles, supers and power bombs with their HUD icons; XRAY=1: the X-ray scope selected, hold Y with ROOM_SEQ=2@n). SHOTS=a-b writes tested frames a..b as shot-NNNN.ppm with vram-NNNN.bin, cgram-NNNN.bin (SHOTS_STEP=n: every n-th; MSGBOX=n queues
+# ITEMS=hex: items given; AMMO=1: missiles, supers and power bombs with their HUD icons; BEAMS=hex: those beams; EQUIP=items:beams@frame
+# switches them as a long press on STATUS does (EQUIP_TRACE=1 prints the equipment every 5 frames); XRAY=1: the X-ray scope selected, hold Y with ROOM_SEQ=2@n). SHOTS=a-b writes tested frames a..b as shot-NNNN.ppm with vram-NNNN.bin, cgram-NNNN.bin (SHOTS_STEP=n: every n-th; MSGBOX=n queues
 # message box n first; GAME_LANG=n in UI language n, ui_lang.h; MODERN=1 their modern controls' lines, and ROOM_SEQ's buttons played
 # through the modern controls (MODERN_TRACE=1 prints the HUD item, ammo, grapple and pose each frame); HUD_MARKED=mask the HUD items
 # drawn as marked, bit 1 missiles, 2 supers; CONTROLS_MENU=1 the CONTROLS row of SPECIAL SETTING MODE). WRAM_TRACE=1 writes wram-NNNN.bin per frame. CERES_ESCAPE=1: the Ceres escape is on (DF45 tilts).

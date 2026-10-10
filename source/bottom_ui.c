@@ -48,7 +48,7 @@ UiOptions g_ui = {
 // The values are what config.ini stores (`tab`): append only.
 typedef enum { TAB_MAP, TAB_STATUS, TAB_DEBUG, TAB_STATES, TAB_OPTIONS, TAB_ACHIEVEMENTS, TAB_COUNT } Tab;
 
-typedef enum { MODAL_NONE, MODAL_RESET, MODAL_TOOLS, MODAL_RA_DETAIL, MODAL_REPORT, MODAL_STATE, MODAL_NOTES, MODAL_ITEMS, MODAL_CONTROLS } Modal;
+typedef enum { MODAL_NONE, MODAL_RESET, MODAL_TOOLS, MODAL_RA_DETAIL, MODAL_REPORT, MODAL_STATE, MODAL_NOTES, MODAL_ITEMS, MODAL_CONTROLS, MODAL_STATUS_HELP } Modal;
 
 static UiRomInfo g_rom_info;
 static Tab g_tab = TAB_STATUS;
@@ -800,6 +800,24 @@ static bool StatusHudTappable(int item) {
   return !ModernControls_On() || item == kSmHudMissiles || item == kSmHudSupers;
 }
 
+// A long press on an item or a beam switches it on or off, as the pause menu's equipment screen does
+// (Equip_RequestToggle): a bar fills along the cell's bottom while it is held, and the switch is asked
+// for once when it is full. Lifting or sliding off the cell before that does nothing.
+enum { kEquipHoldMs = 500 };
+typedef struct { bool active, fired, beam; int index; u64 t0; } EquipHold;
+static EquipHold g_equip_hold;
+static Rect EquipHoldRect(void) { return g_equip_hold.beam ? BeamRect(g_equip_hold.index) : ItemRect(g_equip_hold.index); }
+
+static void DrawEquipHold(Surface s, Rect r, bool beam, int index) {
+  if (!g_equip_hold.active || g_equip_hold.beam != beam || g_equip_hold.index != index) return;
+  const u64 t = osGetTime() - g_equip_hold.t0;
+  const int w = g_equip_hold.fired || t >= kEquipHoldMs ? r.w : (int)((u64)r.w * t / kEquipHoldMs);
+  UiFillRect(s, r.x, r.y + r.h - 2, w, 2, COL_ACCENT);
+}
+
+// The "?" beside ITEMS: what a tap or a long press does on the tab (MODAL_STATUS_HELP).
+static Rect StatusHelpRect(void) { return (Rect){ 286, 99, 26, 11 }; }
+
 static void DrawHudActiveFrame(Surface s, Rect r) {
   UiFrameRect(s, r.x, r.y, r.w, r.h, COL_WARN);
   UiFrameRect(s, r.x + 1, r.y + 1, r.w - 2, r.h - 2, COL_WARN);
@@ -928,7 +946,9 @@ static void DrawStatus(Surface s) {
 #endif
     if (hud >= 0 && have && StatusHudTappable(hud)) DrawTapMark(s, r, on);
     if (hud >= 0 && StatusHudActive(hud)) DrawHudActiveFrame(s, r);
+    DrawEquipHold(s, r, false, i);
   }
+  UiDrawBoxLabel(s, StatusHelpRect(), COL_BOX, COL_BOX_EDGE, COL_ACCENT, Pressed(StatusHelpRect()), "?");
 #if DEBUG_TOOLS
   {
     bool all = true;
@@ -950,6 +970,7 @@ static void DrawStatus(Surface s) {
 #if DEBUG_TOOLS
     if (g_status_fn) UiFrameRect(s, r.x, r.y, r.w, r.h, COL_FN);
 #endif
+    DrawEquipHold(s, r, true, i);
   }
 
   // Map stations (Ceres has none). Debug builds: grey none, green used, purple forced,
@@ -1021,6 +1042,18 @@ static void StatusTouch(int x, int y) {
   if (samus_max_reserve_health && UiIn(ReserveModeRect(), x, y)) {
     Hud_ToggleReserveMode();
     return;
+  }
+  if (UiIn(StatusHelpRect(), x, y)) {
+    g_modal = MODAL_STATUS_HELP;
+    return;
+  }
+  for (int i = 0; i < kSmItemCount + kSmBeamCount; i++) {   // a long press begins
+    const bool beam = i >= kSmItemCount;
+    const int k = beam ? i - kSmItemCount : i;
+    if (!UiIn(beam ? BeamRect(k) : ItemRect(k), x, y)) continue;
+    if (beam ? Equip_CanToggleBeam(kSmBeams[k].mask) : Equip_CanToggleItem(kSmItems[k].mask))
+      g_equip_hold = (EquipHold){ .active = true, .beam = beam, .index = k, .t0 = osGetTime() };
+    break;
   }
   const int item = StatusHudItemAt(x, y);
   if (item < 0 || !StatusHudTappable(item)) return;
@@ -1668,6 +1701,43 @@ static void ControlsModalTouch(int x, int y) {
   if (UiIn(ControlsCloseRect(), x, y)) g_modal = MODAL_NONE;
   for (int i = 0; i < 2; i++)
     if (UiIn(ControlsTabRect(i), x, y)) g_controls_help_modern = i == 1;
+}
+
+// ---- STATUS help window -----------------------------------------------------------
+// The "?" beside ITEMS: what can be touched on the tab, for both control schemes and then for each, wrapped to the
+// window (DrawWrapped).
+
+static Rect StatusHelpCloseRect(void) { return (Rect){ 116, 214, 88, 18 }; }
+
+static int DrawWrapped(Surface s, int x, int y, int chars, int lines, uint32_t col, const char *text);
+
+static void DrawStatusHelpModal(Surface s) {
+  UiFillRect(s, 8, 26, 304, 210, COL_MODAL_EDGE);
+  UiFillRect(s, 9, 27, 302, 208, COL_MODAL);
+  UiDrawText(s, 16, 32, 1, COL_TITLE, Tr(kStrStHelpTitle));
+  // What can be touched: for both schemes, then for each (the one in use with its title green).
+  const bool modern = ModernControls_On();
+  static const struct { UiStr head; UiStr paras[2]; int scheme; } kParts[] = {   // scheme: -1 both, 0 classic, 1 modern
+    { kStrStHelpBoth, { kStrStHelpReserve, kStrStHelpEquip }, -1 },
+    { kStrStHelpClassic, { kStrStHelpClassicTap, kStrCount }, 0 },
+    { kStrStHelpModern, { kStrStHelpModernTap, kStrCount }, 1 },
+  };
+  int y = 46;
+  for (size_t i = 0; i < sizeof(kParts) / sizeof(kParts[0]); i++) {
+    const bool in_use = kParts[i].scheme == (modern ? 1 : 0);
+    UiDrawText(s, 16, y, 1, in_use ? COL_GOOD : COL_ACCENT, Tr(kParts[i].head));
+    y += 11;
+    for (int k = 0; k < 2 && kParts[i].paras[k] != kStrCount; k++) {
+      UiFillRect(s, 16, y + 2, 3, 3, COL_DIM);
+      y += DrawWrapped(s, 24, y, 47, 6, COL_TEXT, Tr(kParts[i].paras[k])) * 10 + 2;
+    }
+    y += 4;
+  }
+  UiDrawBoxLabel(s, StatusHelpCloseRect(), COL_BOX, COL_BOX_EDGE, COL_TEXT, Pressed(StatusHelpCloseRect()), Tr(kStrClose));
+}
+
+static void StatusHelpTouch(int x, int y) {
+  if (UiIn(StatusHelpCloseRect(), x, y)) g_modal = MODAL_NONE;
 }
 
 // ---- Items window ---------------------------------------------------------------
@@ -2801,6 +2871,7 @@ static void TouchDownImpl(int x, int y) {
   case MODAL_NOTES: NotesTouch(x, y); return;
   case MODAL_ITEMS: ItemsModalTouch(x, y); return;
   case MODAL_CONTROLS: ControlsModalTouch(x, y); return;
+  case MODAL_STATUS_HELP: StatusHelpTouch(x, y); return;
 #if DEBUG_TOOLS
   case MODAL_TOOLS: ToolsModalTouch(x, y); return;
 #endif
@@ -2833,6 +2904,7 @@ void BottomUi_TouchDown(int x, int y) {
 }
 
 void BottomUi_TouchMove(int x, int y) {
+  if (g_equip_hold.active && !UiIn(EquipHoldRect(), x, y)) g_equip_hold.active = false;
   if (g_tab == TAB_ACHIEVEMENTS && g_modal == MODAL_NONE && AchievementsTouchMove(y)) g_dirty = 2;
   if (g_tab == TAB_STATES && g_modal == MODAL_NONE && StatesTouchMove(y)) g_dirty = 2;
   if (g_tab == TAB_MAP && g_modal == MODAL_NONE && MapTouchMove(x, y)) g_dirty = 2;
@@ -2840,6 +2912,7 @@ void BottomUi_TouchMove(int x, int y) {
 }
 
 void BottomUi_TouchUp(void) {
+  g_equip_hold.active = false;
   if (g_tab == TAB_ACHIEVEMENTS && g_modal == MODAL_NONE) AchievementsTouchUp();
   if (g_tab == TAB_STATES && g_modal == MODAL_NONE) StatesTouchUp();
   if (g_tab == TAB_MAP && g_modal == MODAL_NONE) MapTouchUp();
@@ -2891,6 +2964,7 @@ static void DrawBottom(const UiPerf *p) {
   case MODAL_NOTES: DrawNotes(s); break;
   case MODAL_ITEMS: DrawItemsModal(s); break;
   case MODAL_CONTROLS: DrawControlsModal(s); break;
+  case MODAL_STATUS_HELP: DrawStatusHelpModal(s); break;
 #if DEBUG_TOOLS
   case MODAL_TOOLS: DrawToolsModal(s); break;
   case MODAL_REPORT: DrawReportModal(s); break;
@@ -2913,7 +2987,7 @@ static void DrawBottom(const UiPerf *p) {
 // timeout)? Those are redrawn every REFRESH_FRAMES; the others only when an event marks them.
 static bool UiIsLive(void) {
   switch (g_modal) {
-  case MODAL_NONE: case MODAL_RESET: case MODAL_RA_DETAIL: case MODAL_NOTES: case MODAL_ITEMS: case MODAL_CONTROLS: break;
+  case MODAL_NONE: case MODAL_RESET: case MODAL_RA_DETAIL: case MODAL_NOTES: case MODAL_ITEMS: case MODAL_CONTROLS: case MODAL_STATUS_HELP: break;
 #if DEBUG_TOOLS
   // The tools window covers the tab: only the scene recorder's frame count moves by itself (the rest changes on a tap).
   case MODAL_TOOLS: return SceneRec_Active();
@@ -3016,6 +3090,16 @@ bool BottomUi_PresentRect(Rect *r) {
 
 bool BottomUi_Frame(const UiPerf *p) {
   const u64 now = osGetTime();
+  if (g_equip_hold.active) {   // a long press on STATUS: its bar moves, and when full the switch is asked for
+    if (g_tab != TAB_STATUS || g_modal != MODAL_NONE) {
+      g_equip_hold.active = false;
+    } else if (!g_equip_hold.fired && now - g_equip_hold.t0 >= kEquipHoldMs) {
+      g_equip_hold.fired = true;
+      const uint16_t m = g_equip_hold.beam ? kSmBeams[g_equip_hold.index].mask : kSmItems[g_equip_hold.index].mask;
+      ReportGameplay(g_equip_hold.beam ? Equip_RequestToggle(0, m) : Equip_RequestToggle(m, 0));
+    }
+    g_dirty = 2;
+  }
   {   // Options changed away from the touch screen (SELECT's missile kind with the modern controls, the
       // game's CONTROLS row): saved once the game is out of gameplay, so the SD card is not written mid-run.
     const SavedOptions o = CurrentOptions();
