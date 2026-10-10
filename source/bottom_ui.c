@@ -90,11 +90,9 @@ static bool Pressed(Rect r) {
 
 static uint32_t FpsColor(float fps) { return fps >= 58.0f ? COL_GOOD : fps >= 45.0f ? COL_WARN : COL_BAD; }
 
-#if DEBUG_TOOLS
 static void ReportGameplay(bool ok) {
   if (!ok) Toast("Only works inside a room");
 }
-#endif
 
 // ---- Tab bar ------------------------------------------------------------------
 // 30 px icon tabs from the left, clock, wifi and battery on the right (mzm's layout).
