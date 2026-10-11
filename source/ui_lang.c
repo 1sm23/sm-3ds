@@ -152,10 +152,8 @@ static const char *const kText[kStrCount] = {
   // OPTIONS -> CONTROLS -> "?": the window with what each button does (the keys are drawn, the text beside them
   // has about 34 characters of room).
   [kStrCtlMove] = "MOVE",
-  [kStrCtlMoveRun] = "MOVE, ALWAYS RUNNING",
   [kStrCtlJump] = "JUMP",
   [kStrCtlRun] = "RUN",
-  [kStrCtlWalk] = "WALK",
   [kStrCtlFire] = "FIRE",
   [kStrCtlFireBomb] = "FIRE / BOMB IN BALL",
   [kStrCtlChoose] = "CHOOSE WEAPON",
