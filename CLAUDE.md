@@ -223,6 +223,7 @@ room, `tools/stereo-test/run.sh` checks the stereo depth mapping (no ROM), `./ru
 `tools/ra-tags/dp_tags.py` (docstring) checks the RetroAchievements table against the set the console saved,
 `tools/game-text/` (README) finds a screen's text for the game's translation, `tools/scene-rec/decode.py` turns a scene recording from the console into PNGs/mp4,
 `tools/auto-bomb-test/run.sh` checks the automatic bomb jump climbs three shafts, `tools/perf-csv/analyze.py FILE.csv` summarises a PERF RECORDER recording (fps, a steady frame, tile events, what the frames over budget were doing),
+`tools/sm-link/` drives a running debug build from the PC over its FTP server (below, "The console in the loop"),
 `tools/update-mock-server.py` serves a fake releases list (with notes) so the updater can be tried without publishing: put its URL in `update_url.txt` in the data folder, and do not accept the install
 (see `docs/debug-tools.md`). Installing on the owner's console: FBI's FTP server, `curl -T
 output/SuperMetroid3DSPort.cia ftp://<3ds-ip>:5000/cias/sm-3ds-dev.cia`; files from the
@@ -235,3 +236,22 @@ but its timings say nothing about Old 3DS.
 Host regression tests: `make test SM_ROM=/path/rom.sfc` (~90 s, `TEST_ARGS=--full`
 adds the teleport test), see `tools/test/README.md`. Run them before merging anything
 that touches the game, the renderer or the audio.
+
+### The console in the loop (for Claude)
+
+A debug build running on the owner's console can be reached from this machine (same LAN, the
+IP in `.3ds_ftp_ip`) once **DEBUG TOOLS -> FTP SERVER** is on; it comes back by itself after a
+relaunch. Nothing needs FBI or closing the game:
+
+```sh
+IP=$(cat .3ds_ftp_ip)
+./build_3ds.sh --install "$IP"                      # build, upload, install over the running game, relaunch
+curl "ftp://$IP:5000/3ds/Super%20Metroid%203DS/debug/"   # list / fetch the debug files
+tools/sm-link/sm-link.py wait && tools/sm-link/sm-link.py run SCRIPT   # drive the game
+```
+
+`tools/sm-link/sm-link.py` presses buttons, taps, saves and loads states, takes screenshots and
+reads state and memory (`docs/debug-tools.md`, "FTP SERVER and remote control"). Say before
+driving the game or installing while the owner is playing: an install loses unsaved progress.
+If the connection is refused, ask for the address the FTP SERVER cell shows; do not scan the
+network without need. The first build with the server arrives the old way (FBI / ftpd `cias/`).

@@ -26,6 +26,7 @@ SAVE STATES =
 SAVED (NO DETAILS) =
 Saved to slot %d =
 Could not save slot %d =
+Could not write the game save =
 Loaded slot %d =
 Slot %d: cannot load =
 Game reset =

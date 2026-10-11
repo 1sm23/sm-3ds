@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "updater.h"
+#include "net_service.h"
 #include "updater_parse.h"
 #include "version.h"
 
@@ -21,7 +22,6 @@ extern void Main_RequestQuit(void);   // main.c
 #define UPDATER_CHUNK (64 * 1024)
 #define UPDATER_MAX_REDIRECTS 5
 #define UPDATER_STACK (64 * 1024)
-#define UPDATER_SOC_SIZE 0x100000 /* also bounds the TCP window */
 #define UPDATER_FILE_BUF (256 * 1024)
 #define UPDATER_MSG_MAX 64
 #define UPDATER_NOTES_MAX 6144
@@ -44,7 +44,7 @@ static char sNotes[UPDATER_NOTES_MAX] = "";   /* under sTextLock */
 static UpdaterRelease sRelease;
 static LightLock sTextLock;
 static bool sLockReady = false;
-static u32* sSocBuf = NULL;
+static bool sNetUp = false;   /* holding the shared socket service (net_service.c) */
 
 static void EnsureLock(void) {
     if (!sLockReady) {
@@ -117,25 +117,19 @@ static size_t CurlWrite(char* ptr, size_t size, size_t nmemb, void* userdata) {
 }
 
 static bool SocketsUp(void) {
-    if (!sSocBuf) {
-        sSocBuf = (u32*)memalign(0x1000, UPDATER_SOC_SIZE);
-        if (!sSocBuf) return false;
-        if (R_FAILED(socInit(sSocBuf, UPDATER_SOC_SIZE))) {
-            free(sSocBuf);
-            sSocBuf = NULL;
-            return false;
-        }
+    if (!sNetUp) {
+        if (!Net3DS_Acquire()) return false;
+        sNetUp = true;
         curl_global_init(CURL_GLOBAL_DEFAULT);
     }
     return true;
 }
 
 static void SocketsDown(void) {
-    if (sSocBuf) {
+    if (sNetUp) {
         curl_global_cleanup();
-        socExit();
-        free(sSocBuf);
-        sSocBuf = NULL;
+        Net3DS_Release();
+        sNetUp = false;
     }
 }
 

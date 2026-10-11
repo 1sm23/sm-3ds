@@ -16,6 +16,9 @@
 #include "modern_controls.h"
 #include "auto_bomb.h"
 #include "debug_tools.h"
+#if DEBUG_TOOLS
+#include "ftp_server.h"
+#endif
 #include "scene_rec.h"
 #include "sm_map.h"
 #include "sm_warp.h"
@@ -68,6 +71,10 @@ static bool g_is_new3ds;
 // the STATUS tab, the item totals of the map and its window, and the map dots the game does not draw.
 static bool g_show_spoilers;
 static char g_toast[64];   // UTF-8
+// DEBUG_TOOLS builds, config.ini: the SD log (on by default there), its mode and the FTP server as
+// the DEBUG TOOLS left them.
+static int g_debug_log = 1, g_debug_log_direct, g_debug_ftp;
+static void SaveConfig(void);
 static u64 g_toast_until;
 static int g_tap_x = -1000, g_tap_y;
 static u64 g_tap_ms;
@@ -81,6 +88,40 @@ void BottomUi_Toast(const char *msg) {
   g_dirty = 2;
 }
 #define Toast BottomUi_Toast
+
+// A message that holds the bottom of the screen for as long as it lasts: a build arriving over the
+// debug FTP server and its install (ftp_server.h). A literal, so a change is a pointer change.
+static const char *StandingNotice(void) {
+#if DEBUG_TOOLS
+  return FtpServer_Notice();
+#else
+  return NULL;
+#endif
+}
+
+// The standing notice as a box in the middle of the screen, laid out like mzm's (a "!" badge, a gold
+// title over the text): it must not be missed, an install is about to restart the game.
+static void DrawStandingNotice(Surface s) {
+  const char *body = StandingNotice();
+  if (!body) return;
+  const char *title = "NEW BUILD";
+  const int tw = UiTextWidth(title, 1), bw = UiTextWidth(body, 1), text_w = tw > bw ? tw : bw;
+  const int pad = 10, icon = 22, gap = 8;
+  const int w = 4 + pad + icon + gap + text_w + pad, h = 44;
+  const int x = (SCREEN_W - w) / 2, y = (SCREEN_H - h) / 2;
+  const uint32_t amber = RGB(245, 175, 45);
+  UiFillRect(s, x + 3, y + 3, w, h, RGB(0, 0, 0));
+  UiFillRect(s, x, y, w, h, RGB(120, 150, 210));
+  UiFillRect(s, x + 1, y + 1, w - 2, h - 2, RGB(10, 14, 24));
+  UiFillRect(s, x + 1, y + 1, 3, h - 2, amber);
+  const int ix = x + 4 + pad, iy = y + (h - icon) / 2;
+  UiFillRect(s, ix + 1, iy, icon - 2, icon, amber);
+  UiFillRect(s, ix, iy + 1, icon, icon - 2, amber);
+  UiDrawText(s, ix + (icon - 10) / 2, iy + (icon - 14) / 2, 2, RGB(10, 14, 24), "!");
+  const int tx = ix + icon + gap;
+  UiDrawText(s, tx, y + 10, 1, COL_TITLE, title);
+  UiDrawText(s, tx, y + 26, 1, RGB(190, 210, 240), body);
+}
 
 // A tap that landed on a window or the update prompt (an overlay) lights only that overlay's buttons,
 // not the ones of the tab under it that happen to sit at the same place.
@@ -2199,7 +2240,7 @@ static void ReportTouch(int x, int y) {
 }
 
 typedef enum {
-  TOOL_DUMP, TOOL_FRAME_DUMP, TOOL_LOG, TOOL_MARK, TOOL_SCENE_REC, TOOL_PERF, TOOL_RENDERER, TOOL_GPU_CHECK, TOOL_PLANE_TINT, TOOL_FORCE_3D, TOOL_GPU_TEST,
+  TOOL_DUMP, TOOL_FRAME_DUMP, TOOL_LOG, TOOL_MARK, TOOL_SCENE_REC, TOOL_PERF, TOOL_RENDERER, TOOL_GPU_CHECK, TOOL_PLANE_TINT, TOOL_FORCE_3D, TOOL_GPU_TEST, TOOL_FTP,
   TOOL_COUNT
 } Tool;
 
@@ -2271,6 +2312,19 @@ static void DrawToolsModal(Surface s) {
                !g_ui.gpu_render ? COL_FAINT : g_ui.force_3d ? COL_WARN : COL_DIM);
   DrawToolCell(s, TOOL_GPU_TEST, "GPU TEST", !g_ui.gpu_render ? "RENDERER IS CPU" : kGpuTestName[g_ui.gpu_test % kGpuTestModes],
                !g_ui.gpu_render ? COL_FAINT : g_ui.gpu_test ? COL_WARN : COL_DIM);
+  {   // the SD card and the remote control over the network while the game runs (ftp_server.h)
+    unsigned sent = 0, received = 0;
+    bool connected = false;
+    char address[40];
+    FtpServer_Stats(&sent, &received, &connected);
+    FtpServer_Address(address, sizeof(address));
+    char *port = strstr(address, ":5000");   // the port is always 5000: the IP is what the cell needs
+    if (port) *port = 0;
+    const bool waiting = !FtpServer_Running() && g_debug_ftp;
+    DrawToolCell(s, TOOL_FTP, connected ? "FTP  CLIENT ON" : "FTP SERVER", waiting ? "WAITING FOR WI-FI" : address,
+                 FtpServer_Running() ? COL_GOOD : waiting ? COL_WARN : act);
+    DrawSideButton(s, TOOL_FTP, FtpServer_Running() || waiting);
+  }
   if (g_ui.plane_tint >= 2 && g_ui.gpu_render) {   // legend of the ramps: back dark .. front bright
     UiDrawText(s, 16, 195, 1, COL_DIM, "BACK");
     for (int i = 0; i < 160; i++) {
@@ -2306,9 +2360,11 @@ static void ToolsModalTouch(int x, int y) {
       if (side) {
         if (Debug_LogEnabled()) BottomUi_Busy();   // stopping writes what is buffered
         Debug_LogSetEnabled(!Debug_LogEnabled());
+        g_debug_log = Debug_LogEnabled();
         Toast(Debug_LastMessage());
       } else {
         Debug_LogSetBuffered(!Debug_LogBuffered());
+        g_debug_log_direct = !Debug_LogBuffered();
         Toast(Debug_LogBuffered() ? "Log: buffered, 16 KB blocks" : "Log: direct, every line");
       }
       break;
@@ -2351,6 +2407,28 @@ static void ToolsModalTouch(int x, int y) {
     case TOOL_GPU_TEST:
       if (!g_ui.gpu_render) Toast("Switch the renderer to GPU first");
       else g_ui.gpu_test = (g_ui.gpu_test + 1) % kGpuTestModes;
+      break;
+    case TOOL_FTP:
+      if (FtpServer_Running() || g_debug_ftp) {   // also cancels a start still waiting for Wi-Fi
+        FtpServer_Stop();
+        g_debug_ftp = 0;
+        Toast("FTP stopped");
+      } else {
+        g_debug_ftp = 1;
+        char address[40];
+        if (FtpServer_Start()) {
+          FtpServer_Address(address, sizeof(address));
+          char msg[64];
+          snprintf(msg, sizeof(msg), "FTP %s", address);
+          Toast(msg);
+        } else {
+          FtpServer_Address(address, sizeof(address));
+          char msg[64];
+          snprintf(msg, sizeof(msg), "FTP: %s (retrying)", address);
+          Toast(msg);
+        }
+      }
+      SaveConfig();   // the next launch (an install over FTP relaunches) finds it as left
       break;
     default: break;
     }
@@ -2758,20 +2836,25 @@ static void DrawUnlockNotice(Surface s) {
 
 // ---- Persistent options -----------------------------------------------------
 // Saved to config.ini in the data folder whenever one changes. Not persisted on
-// purpose: pause, turbo, cheats and the log/perf recorders,
-// which would be confusing or harmful to find switched on at the next boot.
+// purpose: pause, turbo, cheats and the perf and scene recorders, which would be confusing or
+// harmful to find switched on at the next boot. DEBUG_TOOLS builds also keep the SD log (on or
+// off, buffered or direct) and the FTP server as they were left, so a build installed over FTP
+// comes back reachable.
 
 #define CONFIG_PATH "config.ini"
 
 typedef struct {
   int tab, pacing, audio, fps_overlay, speedup, pixel_perfect, wide, language, map_zoom, auto_update, update_beta, hud_hide, spoilers,
       controls, missile, auto_bomb;
+  // DEBUG_TOOLS builds only: the DEBUG TOOLS the next launch finds as they were left.
+  int debug_log, debug_log_direct, debug_ftp;
 } SavedOptions;
 
 static SavedOptions CurrentOptions(void) {
   return (SavedOptions){ g_tab, g_ui.pacing, g_ui.audio_on, g_ui.fps_overlay, g_ui.new3ds_speedup,
                          g_ui.pixel_perfect, g_ui.wide, g_ui_lang, g_map_zoom, g_ui.auto_update, g_ui.update_beta, g_ui.hud_auto_hide,
-                         g_show_spoilers, ModernControls_On(), ModernControls_Missile(), AutoBomb_On() };
+                         g_show_spoilers, ModernControls_On(), ModernControls_Missile(), AutoBomb_On(),
+                         g_debug_log, g_debug_log_direct, g_debug_ftp };
 }
 
 static SavedOptions g_saved_options;   // what config.ini holds
@@ -2787,6 +2870,9 @@ static void SaveConfig(void) {
           o.tab, o.pacing, o.audio, o.fps_overlay, o.speedup, o.pixel_perfect, o.wide,
           UiLang_Code(o.language), o.map_zoom, o.auto_update, o.update_beta, o.hud_hide, o.spoilers,
           o.controls ? "modern" : "classic", o.missile, o.auto_bomb);
+#if DEBUG_TOOLS
+  fprintf(f, "debug_log=%d\ndebug_log_direct=%d\ndebug_ftp=%d\n", o.debug_log, o.debug_log_direct, o.debug_ftp);
+#endif
   fclose(f);
 }
 
@@ -2837,6 +2923,11 @@ static void LoadConfig(void) {
     else if (!strcmp(key, "modern_missile")) ModernControls_SetMissile(v);
     else if (!strcmp(key, "auto_bomb_jump")) AutoBomb_Set(v != 0);
     else if (!strcmp(key, "map_zoom") && v >= 0 && v < MAP_ZOOMS) g_map_zoom = v;
+#if DEBUG_TOOLS
+    else if (!strcmp(key, "debug_log")) g_debug_log = v != 0;
+    else if (!strcmp(key, "debug_log_direct")) g_debug_log_direct = v != 0;
+    else if (!strcmp(key, "debug_ftp")) g_debug_ftp = v != 0;
+#endif
   }
   fclose(f);
 }
@@ -2990,6 +3081,7 @@ static void DrawBottom(const UiPerf *p) {
     UiFillRect(s, 0, y - 2, w, 12, COL_BG);
     UiDrawText(s, g_tab == TAB_MAP ? 4 : 8, y, 1, COL_WARN, g_toast);
   }
+  DrawStandingNotice(s);
   DrawUnlockNotice(s);
 }
 
@@ -3000,7 +3092,7 @@ static bool UiIsLive(void) {
   case MODAL_NONE: case MODAL_RESET: case MODAL_RA_DETAIL: case MODAL_NOTES: case MODAL_ITEMS: case MODAL_CONTROLS: case MODAL_STATUS_HELP: break;
 #if DEBUG_TOOLS
   // The tools window covers the tab: only the scene recorder's frame count moves by itself (the rest changes on a tap).
-  case MODAL_TOOLS: return SceneRec_Active();
+  case MODAL_TOOLS: return SceneRec_Active() || FtpServer_Running();
   case MODAL_REPORT: return false;   // the game is paused under it
 #endif
   default: return true;   // a state's detail (its two-tap confirm times out)
@@ -3117,6 +3209,15 @@ bool BottomUi_Frame(const UiPerf *p) {
   }
   g_ui_frames = p->frames;
   const char *why = NULL;   // what asked for a redraw this frame, for the debug log
+  {
+    static const char *notice_seen;
+    const char *notice = StandingNotice();
+    if (notice != notice_seen) {
+      notice_seen = notice;
+      g_dirty = 2;
+      why = "standing notice changed";
+    }
+  }
   if (g_toast[0] && now > g_toast_until) {
     g_toast[0] = 0;
     g_dirty = 2;
@@ -3321,6 +3422,17 @@ bool BottomUi_Init(const UiRomInfo *rom) {
   g_dirty = 2;
   return UiDraw_Init();
 }
+
+void BottomUi_StatesChanged(void) {
+  RefreshSlots();
+  g_dirty = 2;
+}
+
+#if DEBUG_TOOLS
+bool BottomUi_DebugLogWanted(void) { return g_debug_log != 0; }
+bool BottomUi_DebugLogDirect(void) { return g_debug_log_direct != 0; }
+bool BottomUi_DebugFtpWanted(void) { return g_debug_ftp != 0; }
+#endif
 
 void BottomUi_Exit(void) {
   const SavedOptions o = CurrentOptions();

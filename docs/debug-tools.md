@@ -54,6 +54,78 @@ values) and forgets the forced maps.
 The top bar shows `REC` while the scene recorder runs, `PRF` while the perf recorder
 does, and `CHT` while GOD or MAX is on.
 
+## FTP SERVER and remote control
+
+DEBUG TOOLS -> FTP SERVER (the last cell; the side button starts or stops it) runs a small FTP
+server inside the game, so files can be fetched or dropped while it keeps running: no closing
+the game, no FBI or ftpd. The cell shows the console's IP (the port is always 5000, the same as
+FBI and ftpd, so `./build_3ds.sh --ftp` and the usual client bookmarks work) and its title says
+`CLIENT ON` while one is connected. It needs Wi-Fi; the cell says why when it cannot start
+(`NO WI-FI`, `PORT 5000 BUSY`).
+
+The tools come back at the next launch as they were left (`config.ini`: `debug_log`,
+`debug_log_direct`, `debug_ftp`; DEBUG_TOOLS builds only, a plain build neither reads nor
+writes them). An FTP server left on starts again by itself, retrying every ~2 s until Wi-Fi is
+up (the cell says `WAITING FOR WI-FI`; tapping its button cancels it). The recorders, GPU
+CHECK and the like are one-shot and start off.
+
+- Anonymous: any user name and password. `/` is the root of the SD card; the game's files are
+  in `/3ds/Super Metroid 3DS/` (`debug/`, `saves/`, `config.ini`).
+- Passive mode only (PASV and EPSV, data ports 5001-5064), one client at a time. FileZilla,
+  WinSCP, lftp and curl work:
+
+```sh
+curl ftp://<3ds-ip>:5000/3ds/Super%20Metroid%203DS/debug/                  # list
+curl -O ftp://<3ds-ip>:5000/3ds/Super%20Metroid%203DS/debug/sm-perf-00.csv   # fetch
+wget -r -nH --cut-dirs=3 ftp://<3ds-ip>:5000/3ds/Super%20Metroid%203DS/debug/
+```
+
+Its thread runs on core 1 (the audio thread's) below the game's priority and sleeps on the
+network, so it costs nothing while idle; a transfer competes with the game for the SD card. It
+shares the socket service with the updater (`net_service.c`). Transfers are written to the SD log.
+
+### Installing a build over FTP
+
+`SITE INSTALL <path>` installs a CIA of this game that is already on the SD card over the
+running game and relaunches into the new build (the FTP server comes back on with it).
+`./build_3ds.sh --install IP` builds, uploads to `/3ds/Super Metroid 3DS/update/dev.cia` and
+installs in one go; the interactive menu offers it as "Install into the running game". Any
+unsaved progress is lost. While a `.cia` is received and while it installs, the bottom screen
+says so on any tab, in a box in the middle (`NEW BUILD`: `RECEIVING THE INSTALLER...`, then `INSTALLING - THE GAME WILL RESTART`).
+A CIA of another title is refused. The first build with this feature has to arrive by FBI or
+ftpd as before: there is no server to talk to until it runs once.
+
+### Remote control
+
+While the server runs, the PC can drive the game through SITE commands
+(`source/debug_link.h`): hold buttons for N logic frames, tap the bottom screen, take
+screenshots, save / load / delete save states, take a screen dump, flip an OPTIONS or debug
+value, read the game state and read or write memory. `tools/sm-link/sm-link.py` is the client
+(standard-library Python):
+
+```sh
+tools/sm-link/sm-link.py wait                 # until the game answers (after an install)
+tools/sm-link/sm-link.py state                # frame=... state=08 area=0 room=91F8 x=... health=99/99 ...
+tools/sm-link/sm-link.py press LEFT 120       # hold LEFT 120 logic frames and wait for them
+tools/sm-link/sm-link.py keys A+B 2           # buttons by their 3DS names, joined by +
+tools/sm-link/sm-link.py touch 160 120        # a bottom-screen tap
+tools/sm-link/sm-link.py savestate            # a new save state; `savestate 2` saves over number 2
+tools/sm-link/sm-link.py loadstate            # the newest; `loadstate 3` loads number 3
+tools/sm-link/sm-link.py states               # number=area/room for each
+tools/sm-link/sm-link.py shot                 # /tmp/sm-shot/top.png and bottom.png
+tools/sm-link/sm-link.py peek ram:09C2 2      # SNES WRAM address (energy); or a symbol: peek g_ram+9C2 2
+tools/sm-link/sm-link.py switch "FORCE 3D"    # RENDERER, PLANE TINT, GPU TEST, WIDE, PAUSE, ...
+tools/sm-link/sm-link.py run tools/sm-link/examples/walk-left.txt
+```
+
+Buttons are added to the real ones and counted in logic frames (a paused game does not count),
+so a held direction moves Samus exactly as far each time. Touches, screenshots, dumps, states,
+switches and writes run on the main thread at the top of a frame; the reply waits for them.
+Reads and writes check that the memory is mapped first, so a wrong address answers `550`
+instead of crashing. Together with the server coming back after a relaunch,
+`./build_3ds.sh --install IP && tools/sm-link/sm-link.py run SCRIPT` installs a build and plays
+a scenario on it with nobody at the console.
+
 ## REPORT: saying what is wrong
 
 SCREEN DUMP, FRAME DUMP and the stop button of SCENE REC do not write at once: the game

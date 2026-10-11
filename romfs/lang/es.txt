@@ -28,6 +28,7 @@ SAVE STATES = ESTADOS GUARDADOS
 SAVED (NO DETAILS) = GUARDADO (SIN DETALLES)
 Saved to slot %d = Guardado en la ranura %d
 Could not save slot %d = No se pudo guardar la ranura %d
+Could not write the game save = No se pudo escribir la partida
 Loaded slot %d = Ranura %d cargada
 Slot %d: cannot load = Ranura %d: no se puede cargar
 Game reset = Partida reiniciada

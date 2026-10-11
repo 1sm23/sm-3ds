@@ -23,7 +23,7 @@ typedef enum {
   kStrFollow, kStrCells, kStrMapMark,
   kStrEnergy, kStrMax, kStrReserve, kStrAuto, kStrManual, kStrItems, kStrBeams, kStrMapStations, kStrRoom,
   kStrSaveStates, kStrSavedNoDetails,
-  kStrSavedSlot, kStrSaveFailed, kStrLoadedSlot, kStrLoadFailed, kStrGameReset,
+  kStrSavedSlot, kStrSaveFailed, kStrSramFailed, kStrLoadedSlot, kStrLoadFailed, kStrGameReset,
   kStrPacing, kStrAudio, kStrDisplay, kStrPixelP,
   kStrScaled, kStrView, kStrLanguage, kStrResetGame, kStrFrameSkipOffToast,
   kStrResetQuestion, kStrResetLost1, kStrResetLost2, kStrReset, kStrCancel,
