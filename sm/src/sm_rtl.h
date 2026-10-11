@@ -202,7 +202,7 @@ typedef struct {
 extern const RtlControlsMenu *g_rtl_controls_menu;
 extern bool g_rtl_controls_row_shown;
 extern int g_rtl_ctl_cursor, g_rtl_ctl_top;
-enum { kRtlCtlHeadRow = 5, kRtlCtlRow0 = 8, kRtlCtlPitch = 3, kRtlCtlShown = 7, kRtlCtlClassicCount = 9, kRtlCtlModernCount = 12 };
+enum { kRtlCtlHeadRow = 5, kRtlCtlRow0 = 8, kRtlCtlPitch = 3, kRtlCtlShown = 7, kRtlCtlClassicCount = 9, kRtlCtlModernCount = 11 };
 static inline int RtlCtlCount(bool modern) { return modern ? kRtlCtlModernCount : kRtlCtlClassicCount; }
 // A button's icon on that screen, 3x2 tilemap words: 0 X, 1 A, 2 B, 3 SELECT, 4 Y, 5 L, 6 R.
 const uint16 *RtlCtlButtonIcon(int button);

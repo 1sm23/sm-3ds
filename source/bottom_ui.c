@@ -1679,7 +1679,7 @@ static void DrawControlsModal(Surface s) {
     rows[n++] = (Row){ "START", kStrCtlPause };
   } else {
     static const Row kModern[] = {
-      { "DPAD", kStrCtlMoveRun }, { "A", kStrCtlJump }, { "B", kStrCtlWalk }, { "X", kStrCtlFireBomb },
+      { "DPAD", kStrCtlMove }, { "A", kStrCtlJump }, { "B", kStrCtlRun }, { "X", kStrCtlFireBomb },
       { "Y", kStrCtlMorph }, { "L", kStrCtlAimUp }, { "L+DOWN", kStrCtlAimDownLock }, { "R+X", kStrCtlMissile },
       { "R+Y", kStrCtlGrapple }, { "R+B", kStrCtlXray }, { "SELECT", kStrCtlMissileKind }, { "START", kStrCtlPause },
     };
