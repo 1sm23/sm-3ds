@@ -28,6 +28,7 @@ SAVE STATES = ESTADOS SALVOS
 SAVED (NO DETAILS) = SALVO (SEM DETALHES)
 Saved to slot %d = Salvo no espaço %d
 Could not save slot %d = Não foi possível salvar o espaço %d
+Could not write the game save = Não foi possível gravar o jogo
 Loaded slot %d = Espaço %d carregado
 Slot %d: cannot load = Espaço %d: não foi possível carregar
 Game reset = Jogo reiniciado

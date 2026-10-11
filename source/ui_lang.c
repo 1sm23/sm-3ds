@@ -39,6 +39,7 @@ static const char *const kText[kStrCount] = {
   [kStrSavedNoDetails] = "SAVED (NO DETAILS)",
   [kStrSavedSlot] = "Saved to slot %d",
   [kStrSaveFailed] = "Could not save slot %d",
+  [kStrSramFailed] = "Could not write the game save",
   [kStrLoadedSlot] = "Loaded slot %d",
   [kStrLoadFailed] = "Slot %d: cannot load",
   [kStrGameReset] = "Game reset",

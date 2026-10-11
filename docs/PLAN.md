@@ -1502,3 +1502,10 @@ Audio off on the 2DS (2026-10-03, WIDE on) changes little: A923 shown 44.3 (46.5
   its own, because `config.ini` is rewritten whole by the UI and would drop an extra line. The viewer is a window (`MODAL_NOTES`) over any
   tab instead of living on one tab, so the prompt's button needs no tab switch; while it is up the prompt hides and its touches go to the
   viewer. The notes of a tag are written when the tag is made (one summary of the whole range, not one per commit), see CLAUDE.md.
+- **2026-10-12, the game's save (`saves/sm.srm`) is written by a worker thread (`source/sram_writer.c`).** On the 2DS the
+  rename + create + write + close took ~120 ms in the middle of the save station's animation (the fps counter fell to 25-30).
+  `RtlWriteSram` now copies the 8 KB and returns; the SRAM in memory is what the game reads, so nothing waits for the file. The
+  file is written whole as `sm.srm.tmp` and only then put in place (`.bak` keeps the save before), and `RtlReadSram` tries
+  `sm.srm`, `.tmp`, `.bak` in that order, accepting only exactly 8192 bytes: a cut at any step leaves one complete file (checked
+  on the host by cutting at every step; not on a real power loss). The process waits for the thread before it exits. A failed
+  write shows a toast (`kStrSramFailed`).
