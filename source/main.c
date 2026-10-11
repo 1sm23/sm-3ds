@@ -41,6 +41,11 @@
 #include "updater.h"
 #include "states_store.h"
 #include "build_config.h"
+#if DEBUG_TOOLS
+#include "cia_install.h"
+#include "debug_link.h"
+#include "ftp_server.h"
+#endif
 
 enum Button {
   BTN_A = 0,
@@ -163,6 +168,11 @@ static bool CaptureStateShot(void) {
   if (!top) return false;
   States_MakeShot(top, g_state_shot);
   return true;
+}
+
+// The top screen as the player sees it, 400x240 column-major 0xRRGGBBAA (debug_link.c, SITE SHOT).
+const uint32_t *Main_TopScreenPixels(void) {
+  return g_top_by_gpu ? GpuPpu3ds_ReadTop() : UiDraw_Screen(GFX_TOP).px;
 }
 
 // The 3D slider, with the top screen switched to 3D while it is up (gfxSet3D: 800x240,
@@ -605,6 +615,11 @@ static FILE *g_exit_file;
 static volatile bool g_quit_request;
 void Main_RequestQuit(void) { g_quit_request = true; }
 
+#if DEBUG_TOOLS
+// Logic frames run so far (RtlRunFrame calls), for the remote control's KEYS and STATE.
+static uint64_t g_logic_frames;
+#endif
+
 void ExitStep(const char *what) {
   if (!g_exit_file) {
     mkdir("debug", 0777);
@@ -731,8 +746,12 @@ int main(int argc, char** argv) {
   Debug_Init(APP_VERSION_LABEL);
   Debug_SetObjDump(DumpObjText);
 #if DEBUG_TOOLS
-  // Debug builds log from boot, so a playtest always leaves a log behind.
-  Debug_LogSetEnabled(true);
+  // Debug builds log from boot (so a playtest always leaves a log behind) unless the DEBUG TOOLS
+  // left it off; the FTP server comes back on its own once Wi-Fi is up (the main loop).
+  if (BottomUi_DebugLogWanted()) {
+    Debug_LogSetBuffered(!BottomUi_DebugLogDirect());
+    Debug_LogSetEnabled(true);
+  }
 #endif
   {
     bool n3ds = false;
@@ -771,6 +790,22 @@ int main(int argc, char** argv) {
     RetroAch_Update();
 
     hidScanInput();
+#if DEBUG_TOOLS
+    FtpServer_Tick();
+    {   // The FTP server was on when the game last ran (or a start found no Wi-Fi): try again every
+        // ~2 s until it serves or the DEBUG TOOLS stop it.
+      static unsigned ftp_retry = 120;
+      if (BottomUi_DebugFtpWanted() && !FtpServer_Running() && ++ftp_retry >= 120) {
+        ftp_retry = 0;
+        FtpServer_Start();
+      }
+    }
+    if (FtpServer_TakeRelaunch()) {   // SITE INSTALL put a new build in place: jump into it, as the updater's restart does
+      ExitStep("relaunching into the build just installed");
+      if (!CiaInstall_JumpToSelf()) ExitStep("the jump into the new build was refused");
+      g_quit_request = true;
+    }
+#endif
     if (!aptMainLoop() || g_quit_request) {
       ExitStep(g_quit_request ? "quit requested" : "quit event");
       running = false;
@@ -779,7 +814,10 @@ int main(int argc, char** argv) {
     }
     {
       // The HID key bits are the Button numbers (A = 0 ... Y = 11).
-      const u32 down = hidKeysDown(), up = hidKeysUp();
+      u32 down = hidKeysDown(), up = hidKeysUp();
+#if DEBUG_TOOLS
+      DebugLink_Poll(&down, &up, g_logic_frames);   // buttons and requests from the PC (SITE over FTP)
+#endif
       for (int b = 0; b <= BTN_Y; b++) {
         if (down & BIT(b)) HandleCommand(b, true);
         if (up & BIT(b)) HandleCommand(b, false);
@@ -814,6 +852,9 @@ int main(int argc, char** argv) {
       const bool ok = RtlSaveLoadFile(kSaveLoad_Save, state_file, g_ui.save_slot);
       BottomUi_StateSaved(g_ui.save_slot, ok, ok && CaptureStateShot() ? g_state_shot : NULL);
       if (ok) RetroAch_StateSaved(g_ui.save_slot);
+#if DEBUG_TOOLS
+      DebugLink_StateDone(ok);
+#endif
     }
     if (g_ui.req_load_state) {
       BottomUi_Busy();
@@ -822,6 +863,9 @@ int main(int argc, char** argv) {
       const bool ok = RtlSaveLoadFile(kSaveLoad_Load, state_file, g_ui.save_slot);
       BottomUi_StateLoaded(g_ui.save_slot, ok);
       if (ok) RetroAch_StateLoaded(g_ui.save_slot);
+#if DEBUG_TOOLS
+      DebugLink_StateDone(ok);
+#endif
     }
     // A reset or a loaded state replaces VRAM without going through the PPU's data port,
     // which is how the GPU renderer learns what changed.
@@ -878,6 +922,9 @@ int main(int argc, char** argv) {
         SmWide_HideHud(hidden & 1, hidden & 2);
       }
       is_replay = RtlRunFrame(inputs);
+#if DEBUG_TOOLS
+      g_logic_frames++;
+#endif
       RetroAch_DoFrame();
       g_ppu_line_capture = NULL;
       if (capture) {
@@ -1113,6 +1160,9 @@ int main(int argc, char** argv) {
   // Cleanup. Each step is noted in debug/sm-exit.txt first: closing from the HOME menu
   // has been seen to hang on "Closing software", and the file shows the step it hung in.
   ExitStep("loop left");
+#if DEBUG_TOOLS
+  if (FtpServer_Running()) FtpServer_Stop();
+#endif
   RetroAch_Shutdown();
   ExitStep("achievements done");
   GpuPpu3ds_Exit();

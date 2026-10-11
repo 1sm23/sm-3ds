@@ -103,6 +103,17 @@ void BottomUi_Toast(const char *msg);
 void BottomUi_StateSaved(int slot, bool ok, const uint16_t *shot);   // `shot`: the top screen, 200x120 RGB565, or NULL
 void BottomUi_StateLoaded(int slot, bool ok);
 void BottomUi_GameReset(void);
+// A state was deleted or written from outside the States tab (the remote control): rescan the list.
+void BottomUi_StatesChanged(void);
+
+#include "build_config.h"
+#if DEBUG_TOOLS
+// What the DEBUG TOOLS were left at (config.ini): the SD log on or off and its mode, and the
+// debug FTP server, which the main loop starts again, retrying until Wi-Fi is up.
+bool BottomUi_DebugLogWanted(void);
+bool BottomUi_DebugLogDirect(void);
+bool BottomUi_DebugFtpWanted(void);
+#endif
 
 // Small FPS/timing overlay on the top framebuffer (if g_ui.fps_overlay).
 void BottomUi_DrawTopOverlay(const UiPerf *perf);
