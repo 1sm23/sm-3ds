@@ -168,6 +168,9 @@ static const char *const kText[kStrCount] = {
   [kStrCtlXray] = "X-RAY SCOPE",
   [kStrCtlMissileKind] = "MISSILE OR SUPER MISSILE",
   [kStrCtlConfigNote] = "BUTTONS FROM THE GAME'S CONTROLLER SETTING",
+  // Its button for the automatic bomb jump (the bomb button held in the morph ball climbs), with ": ON" / ": OFF"
+  // after it: about 26 characters of room.
+  [kStrAutoBomb] = "AUTO BOMB JUMP",
   // STATUS -> "?": what can be touched on the tab, for both schemes and for each, paragraphs wrapped to the window
   // (about 14 lines of 47 characters in all).
   [kStrStHelpTitle] = "THE STATUS TAB",

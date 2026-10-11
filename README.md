@@ -95,6 +95,8 @@ The port offers two control schemes selectable in **OPTIONS -> CONTROLS** (or by
 - **CLASSIC:** Maps 3DS buttons directly to original SNES buttons (D-pad/Circle Pad moves, B runs, A jumps, X fires, Select switches weapon, Y cancels weapon, R/L aim diagonally).
 - **MODERN:** B runs (as in the original), L aims diagonally, R + X / Y / B fires missiles / super missiles / special weapons, Y rolls into morph ball.
 
+**Auto bomb jump** (both schemes, on by default; the button at the bottom of the "?" window switches it): hold the bomb button in the morph ball and Samus climbs by herself, laying each bomb on the frame that keeps the infinite bomb jump going. Tapping the button lays bombs as always; letting go stops the climb. It does nothing in water or lava without the Gravity Suit, where bombs barely lift the ball.
+
 The bottom screen is operated entirely by touch:
 - **STATUS:** Tap weapons to equip them. **Hold down (0.5s)** on any item or beam to toggle it on/off without pausing. Tap reserve tanks to switch AUTO / MANUAL.
 - **MAP:** Tap and drag to explore the map. Tap the zoom button to toggle 1X, 2X, and 3X zoom. Tap the item tracker button to view collected items by area.

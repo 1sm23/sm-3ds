@@ -72,6 +72,9 @@ ROM=$(realpath "$ROM")
 echo "map-rooms: every room's level data fits the map's decompression buffer, every cell can be asked for its room"
 WORK=$OUT/map-test "$ROOT/tools/map-test/run.sh" "$ROM" > "$OUT/map-test.log" 2>&1
 check map-rooms "map_test: OK" "$(grep -q '^map_test: OK$' "$OUT/map-test.log"; echo $?)"
+echo "auto-bomb: the bomb button held in the morph ball climbs three open shafts (source/auto_bomb.c)"
+WORK=$OUT/auto-bomb-test "$ROOT/tools/auto-bomb-test/run.sh" "$ROM" > "$OUT/auto-bomb-test.log" 2>&1 || true
+check auto-bomb "auto_bomb_test: OK" "$(grep -q '^auto_bomb_test: OK$' "$OUT/auto-bomb-test.log"; echo $?)"
 
 # ---- Builds (once) ------------------------------------------------------------------------
 echo "building the host test programs..."
