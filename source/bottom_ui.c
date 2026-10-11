@@ -14,6 +14,7 @@
 #include "cheats.h"
 #include "game_text.h"
 #include "modern_controls.h"
+#include "auto_bomb.h"
 #include "debug_tools.h"
 #include "scene_rec.h"
 #include "sm_map.h"
@@ -1603,7 +1604,8 @@ static void ResetModalTouch(int x, int y) {
 
 static bool g_controls_help_modern;   // the tab shown
 static Rect ControlsTabRect(int i) { return (Rect){ 150 + i * 80, 30, 76, 16 }; }
-static Rect ControlsCloseRect(void) { return (Rect){ 116, 212, 88, 18 }; }
+static Rect ControlsCloseRect(void) { return (Rect){ 216, 212, 88, 18 }; }
+static Rect ControlsAutoBombRect(void) { return (Rect){ 16, 212, 192, 18 }; }   // AUTO BOMB JUMP: ON / OFF
 
 static void OpenControlsHelp(void) {
   g_controls_help_modern = ModernControls_On();
@@ -1692,11 +1694,20 @@ static void DrawControlsModal(Surface s) {
     UiDrawText(s, kTextX, y + 2, 1, COL_TEXT, Tr(rows[i].what));
   }
   if (!g_controls_help_modern) UiDrawText(s, 16, kY0 + n * kPitch + 6, 1, COL_DIM, Tr(kStrCtlConfigNote));
+  // Both schemes: the bomb button held in the morph ball climbs by itself (auto_bomb.c).
+  {
+    char label[64];
+    const bool on = AutoBomb_On();
+    snprintf(label, sizeof(label), "%s: %s", Tr(kStrAutoBomb), Tr(on ? kStrOn : kStrOff));
+    UiDrawBoxLabel(s, ControlsAutoBombRect(), on ? RGB(28, 54, 44) : COL_BOX, on ? RGB(90, 220, 150) : COL_BOX_EDGE,
+                   on ? RGB(180, 255, 210) : COL_DIM, Pressed(ControlsAutoBombRect()), label);
+  }
   UiDrawBoxLabel(s, ControlsCloseRect(), COL_BOX, COL_BOX_EDGE, COL_TEXT, Pressed(ControlsCloseRect()), Tr(kStrClose));
 }
 
 static void ControlsModalTouch(int x, int y) {
   if (UiIn(ControlsCloseRect(), x, y)) g_modal = MODAL_NONE;
+  if (UiIn(ControlsAutoBombRect(), x, y)) AutoBomb_Set(!AutoBomb_On());
   for (int i = 0; i < 2; i++)
     if (UiIn(ControlsTabRect(i), x, y)) g_controls_help_modern = i == 1;
 }
@@ -2754,13 +2765,13 @@ static void DrawUnlockNotice(Surface s) {
 
 typedef struct {
   int tab, pacing, audio, fps_overlay, speedup, pixel_perfect, wide, language, map_zoom, auto_update, update_beta, hud_hide, spoilers,
-      controls, missile;
+      controls, missile, auto_bomb;
 } SavedOptions;
 
 static SavedOptions CurrentOptions(void) {
   return (SavedOptions){ g_tab, g_ui.pacing, g_ui.audio_on, g_ui.fps_overlay, g_ui.new3ds_speedup,
                          g_ui.pixel_perfect, g_ui.wide, g_ui_lang, g_map_zoom, g_ui.auto_update, g_ui.update_beta, g_ui.hud_auto_hide,
-                         g_show_spoilers, ModernControls_On(), ModernControls_Missile() };
+                         g_show_spoilers, ModernControls_On(), ModernControls_Missile(), AutoBomb_On() };
 }
 
 static SavedOptions g_saved_options;   // what config.ini holds
@@ -2772,10 +2783,10 @@ static void SaveConfig(void) {
   g_saved_options = o;
   fprintf(f, "# Super Metroid 3DS options (written by the bottom screen)\n");
   fprintf(f, "tab=%d\npacing=%d\naudio=%d\nfps_overlay=%d\nnew3ds_speedup=%d\npixel_perfect=%d\nwide=%d\n"
-          "language=%s\nmap_zoom=%d\nauto_update=%d\nupdate_beta=%d\nhud_auto_hide=%d\nspoilers=%d\ncontrols=%s\nmodern_missile=%d\n",
+          "language=%s\nmap_zoom=%d\nauto_update=%d\nupdate_beta=%d\nhud_auto_hide=%d\nspoilers=%d\ncontrols=%s\nmodern_missile=%d\nauto_bomb_jump=%d\n",
           o.tab, o.pacing, o.audio, o.fps_overlay, o.speedup, o.pixel_perfect, o.wide,
           UiLang_Code(o.language), o.map_zoom, o.auto_update, o.update_beta, o.hud_hide, o.spoilers,
-          o.controls ? "modern" : "classic", o.missile);
+          o.controls ? "modern" : "classic", o.missile, o.auto_bomb);
   fclose(f);
 }
 
@@ -2824,6 +2835,7 @@ static void LoadConfig(void) {
     else if (!strcmp(key, "hud_auto_hide")) g_ui.hud_auto_hide = v != 0;
     else if (!strcmp(key, "spoilers")) g_show_spoilers = v != 0;
     else if (!strcmp(key, "modern_missile")) ModernControls_SetMissile(v);
+    else if (!strcmp(key, "auto_bomb_jump")) AutoBomb_Set(v != 0);
     else if (!strcmp(key, "map_zoom") && v >= 0 && v < MAP_ZOOMS) g_map_zoom = v;
   }
   fclose(f);
