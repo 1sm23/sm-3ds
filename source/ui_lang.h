@@ -42,7 +42,7 @@ typedef enum {
   kStrUpdsLabel, kStrUpdsCheck, kStrUpdsChecking, kStrUpdsNew, kStrUpdsInstalling, kStrUpdsRestart, kStrUpdsError,
   kStrSpoilers, kStrArea, kStrMajorShort, kStrTotalShort, kStrUniqueItems, kStrNone,
   kStrControls, kStrClassic, kStrModern,
-  kStrCtlMove, kStrCtlMoveRun, kStrCtlJump, kStrCtlRun, kStrCtlWalk, kStrCtlFire, kStrCtlFireBomb, kStrCtlChoose, kStrCtlCancel, kStrCtlAimUp, kStrCtlAimDown, kStrCtlAimDownLock, kStrCtlPause, kStrCtlMorph, kStrCtlMissile, kStrCtlGrapple, kStrCtlXray, kStrCtlMissileKind, kStrCtlConfigNote,
+  kStrCtlMove, kStrCtlJump, kStrCtlRun, kStrCtlFire, kStrCtlFireBomb, kStrCtlChoose, kStrCtlCancel, kStrCtlAimUp, kStrCtlAimDown, kStrCtlAimDownLock, kStrCtlPause, kStrCtlMorph, kStrCtlMissile, kStrCtlGrapple, kStrCtlXray, kStrCtlMissileKind, kStrCtlConfigNote, kStrAutoBomb,
   kStrStHelpTitle, kStrStHelpBoth, kStrStHelpReserve, kStrStHelpEquip, kStrStHelpClassic, kStrStHelpClassicTap, kStrStHelpModern, kStrStHelpModernTap,
   kStrCount
 } UiStr;

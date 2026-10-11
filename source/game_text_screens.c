@@ -887,8 +887,8 @@ static void ControllerList(const TextLayer *big) {
       Want((uint16_t)(big->map + r * 32 + x), (uint16_t)((Cell(big, r, x) & 0xfc00 & ~kPalMask) | big->font->fill));
   static const char *const kClassic[7] = { "SHOT", "JUMP", "DASH", "ITEM SELECT", "ITEM CANCEL", "ANGLE UP", "ANGLE DOWN" };
   // The modern scheme: the label (an [options] key) and its buttons, a second one after a "+".
-  static const struct { const char *en; int8_t b1, b2; } kModern[11] = {
-    { "DASH", kBtnLeftRight, -1 }, { "JUMP", kBtnA, -1 }, { "WALK", kBtnB, -1 }, { "SHOT / BOMB", kBtnX, -1 },
+  static const struct { const char *en; int8_t b1, b2; } kModern[10] = {
+    { "JUMP", kBtnA, -1 }, { "DASH", kBtnB, -1 }, { "SHOT / BOMB", kBtnX, -1 },
     { "MORPH BALL", kBtnY, -1 }, { "AIM", kBtnL, kBtnUpDown }, { "MISSILE", kBtnR, kBtnX },
     { "POWER BOMB", kBtnR, kBtnX }, { "GRAPPLING BEAM", kBtnR, kBtnY }, { "X-RAY SCOPE", kBtnR, kBtnB },
     { "MISSILE / SUPER", kBtnSelect, -1 },
@@ -902,7 +902,7 @@ static void ControllerList(const TextLayer *big) {
     if (!modern && i < 7) {
       PutText(big, row, kCtlLabelCol, OptionsText(kClassic[i]), kPalBright);
       CtlIcon(big, row, kCtlIconCol, RtlCtlBinding(i), false);
-    } else if (modern && i < 11) {
+    } else if (modern && i < 10) {
       const int k = i;
       PutText(big, row, kCtlLabelCol, OptionsText(kModern[k].en), kPalDim);
       int col = kCtlIconCol;
@@ -1592,7 +1592,7 @@ void GameTextScreens_ForEachKey(LangKeyFn *fn) {
   fn("options", "LANGUAGE", "the title of the language list and its entry in OPTION MODE");
   fn("options", "CLASSIC", "CONTROLLER SETTING MODE, the scheme under the title: its first choice, 10 letters at most");
   fn("options", "MODERN", "its second choice, 12 letters at most");
-  static const char *const kModernRows[] = { "WALK", "SHOT / BOMB", "MORPH BALL", "AIM", "MISSILE", "POWER BOMB",
+  static const char *const kModernRows[] = { "SHOT / BOMB", "MORPH BALL", "AIM", "MISSILE", "POWER BOMB",
                                              "GRAPPLING BEAM", "X-RAY SCOPE", "MISSILE / SUPER" };
   for (size_t i = 0; i < sizeof(kModernRows) / sizeof(kModernRows[0]); i++)
     fn("options", kModernRows[i], "CONTROLLER SETTING MODE, the modern scheme's rows: 16 letters at most");

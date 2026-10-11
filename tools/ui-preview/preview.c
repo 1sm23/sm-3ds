@@ -277,7 +277,10 @@ int main(int argc, char **argv) {
   Shot("options");
   Tap(312 - 17, 30 + 5);             // "?" beside CONTROLS: the window
   Shot("controls window, English");
-  Tap(160, 220);                     // CLOSE
+  Tap(100, 220);                     // AUTO BOMB JUMP: OFF
+  Shot("controls window, auto bomb jump off");
+  Tap(100, 220);                     // and ON again
+  Tap(260, 220);                     // CLOSE
   Tap(160, 180);                     // RESET GAME
   Shot("options, reset window");
   Tap(216, 148);                     // cancel
@@ -358,7 +361,7 @@ int main(int argc, char **argv) {
     Tap(ModernControls_On() ? 150 + 5 : 230 + 5, 30 + 5);
     snprintf(what, sizeof(what), "controls window, other tab, %s", UiLang_Name(g_ui_lang));
     Shot(what);
-    Tap(160, 220);                   // CLOSE
+    Tap(260, 220);                   // CLOSE
     TapTab(kStatus);
     snprintf(what, sizeof(what), "status, %s, %s controls", UiLang_Name(g_ui_lang), ModernControls_On() ? "modern" : "classic");
     Shot(what);

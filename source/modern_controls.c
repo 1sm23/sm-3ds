@@ -133,9 +133,9 @@ int ModernControls_Translate(int in) {
   // the pause screen. One the game skips (no ammo) leaves the selection as it was.
   if (want != hud_item_index) Hud_RequestSelect(want);
 
-  // Samus always runs; B alone walks. The X-ray lasts while run is held, so while it is selected
-  // run means R and B held, and letting go of either ends it.
-  const bool run = hud_item_index == kSmHudXray ? r && b : !(b && !r);
+  // B runs, as in the original. The X-ray lasts while run is held, so while it is selected run
+  // means R and B held, and letting go of either ends it.
+  const bool run = hud_item_index == kSmHudXray ? r && b : b;
   if (run) out |= Pad(button_config_run_b);
   return out;
 }

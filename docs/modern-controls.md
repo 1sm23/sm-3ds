@@ -1,7 +1,7 @@
 # Modern control scheme (design, #32)
 
 A second control mode, closer to Zero Mission's and Fusion's: no item cycling, the weapons on
-held combinations. The owner's decisions of 2026-10-10 are below (running always on: the owner's, the same day). They are a starting point:
+held combinations. The owner's decisions of 2026-10-10 are below (running always on: the owner's, the same day; replaced on 2026-10-11 by B held to run, below). They are a starting point:
 the owner expects to adjust them while playing with it. The original controls (CLASSIC) stay
 exactly as they are.
 
@@ -16,8 +16,7 @@ D-pad). ZL, ZR and the C-stick may add shortcuts on a New 3DS later, never somet
 | Physical | Does |
 |---|---|
 | A | jump |
-| (nothing) | Samus always runs, as in Zero Mission and Fusion: the speed booster starts by itself after a long enough run |
-| B | walk while held (proposed, to try: the only way left to move slowly) |
+| B | run while held, as in the original (2026-10-11, the owner's: running always on was dropped; without B Samus walks) |
 | X | fire (beam; in morph ball, a bomb) |
 | L | aim diagonally up; Down while L is held turns the aim down and it stays down after Down is let go, until L is let go or Up is pressed (Up and Down do not reach the game while L is held: no crouching) |
 | R + X | fire the missile kind chosen with SELECT (missile or super missile) |
@@ -65,9 +64,9 @@ built from `g_input1_state | g_gamepad_buttons | CirclePadAsDpad()`), only when 
 
 - L → the aim-up bit, or the aim-down bit once Down was pressed with L held (kept until L is let go or
   Up is pressed); Up and Down masked while L is held.
-- The run bit (`button_config_run_b`) is sent held during gameplay only (`game_state` 8: in the
-  game's menus B is "back"), except while B alone is held (walk) and while the X-ray is on: the
-  X-ray stays on as long as run is held (`XrayRunHandler`, the `HdmaobjPreInstr_Xray*` functions
+- The run bit (`button_config_run_b`) is sent while B is held during gameplay (`game_state` 8: in the
+  game's menus B is "back" and passes as it is); while the X-ray is selected only with R and B both
+  held: the X-ray stays on as long as run is held (`XrayRunHandler`, the `HdmaobjPreInstr_Xray*` functions
   in `sm_88.c`), so then run = R and B both held, and letting go ends it as in the original.
 - R, SELECT, Y and B never reach the game as themselves.
 - While R is held: request the item the context wants every frame it differs from
@@ -166,7 +165,5 @@ fires the grapple, R + X in morph ball lays a power bomb.
 - Whether Y alone should keep the grapple once hooked (proposed above) or R + Y must stay held.
 - What R + X does with no missiles of the marked kind: fire the beam (as the original's skip
   rules give) or fall back to the other kind.
-- Whether B alone as walk is needed, or running always is enough.
-- Whether running always makes the speed booster start where it is not wanted (long corridors).
 - The marked look in the HUD: a palette or a blink.
 - New 3DS shortcuts (ZL, ZR, C-stick).

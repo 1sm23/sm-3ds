@@ -1,5 +1,5 @@
 // The modern control scheme (OPTIONS -> CONTROLS, issue #32, docs/modern-controls.md): Samus
-// always runs, L aims, R + a button uses a weapon, SELECT only switches missiles / super missiles.
+// runs with B, L aims, R + a button uses a weapon, SELECT only switches missiles / super missiles.
 // It lives here, in front of the game: the game only ever sees SNES pad bits (through its own
 // button configuration) and item selections asked through g_rtl_hud_select, so its RAM holds what
 // a SNES pad could produce and RetroAchievements, saves and states are not affected.

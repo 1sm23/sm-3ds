@@ -73,7 +73,7 @@ static const char *const kModernLines[kMsgCount] = {
   [4] = "{} in morph ball, hold {R} and press {X}.",
   [5] = "{} hold {R} and press {Y}.",
   [6] = "{} hold {R} and {B}.",
-  [13] = "keep running to speed up.",
+  [13] = "hold {B} to run.",
 };
 
 static bool g_modern_lines;
