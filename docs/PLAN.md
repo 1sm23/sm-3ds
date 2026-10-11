@@ -803,6 +803,13 @@ Audio off on the 2DS (2026-10-03, WIDE on) changes little: A923 shown 44.3 (46.5
 
 ## Decisions log
 
+- 2026-10-12: The game's save (`saves/sm.srm`) is written by a worker thread (`source/sram_writer.c`). On the 2DS the
+  rename + create + write + close took ~120 ms in the middle of the save station's animation (the fps counter fell to 25-30).
+  `RtlWriteSram` now copies the 8 KB and returns; the SRAM in memory is what the game reads, so nothing waits for the file. The
+  file is written whole as `sm.srm.tmp` and only then put in place (`.bak` keeps the save before), and `RtlReadSram` tries
+  `sm.srm`, `.tmp`, `.bak` in that order, accepting only exactly 8192 bytes: a cut at any step leaves one complete file (checked
+  on the host by cutting at every step; not on a real power loss). The process waits for the thread before it exits. A failed
+  write shows a toast (`kStrSramFailed`).
 - 2026-10-11: The automatic bomb jump (P4.17) forecasts instead of keeping a beat. Measured on the host: a bomb is
   looked at against Samus once, 51 frames after it is laid (its counter at 8), and throws her if she is within 9 px across
   and 11 up or down; the throw is 2.C000 px a frame slowed by 0x1C00 (~35 px up in 27 frames, three frames still at the

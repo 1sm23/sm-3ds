@@ -40,6 +40,8 @@
 #include "version.h"
 #include "updater.h"
 #include "states_store.h"
+#include "sram_writer.h"
+#include "ui_lang.h"
 #include "build_config.h"
 #if DEBUG_TOOLS
 #include "cia_install.h"
@@ -806,6 +808,13 @@ int main(int argc, char** argv) {
       g_quit_request = true;
     }
 #endif
+    {
+      float sram_ms;
+      if (SramWriter_TakeResult(&sram_ms)) {
+        Debug_Log("sram: saves/sm.srm %s in %.0f ms (off the main thread)", sram_ms < 0 ? "FAILED" : "written", sram_ms < 0 ? -sram_ms : sram_ms);
+        if (sram_ms < 0) BottomUi_Toast(Tr(kStrSramFailed));
+      }
+    }
     if (!aptMainLoop() || g_quit_request) {
       ExitStep(g_quit_request ? "quit requested" : "quit event");
       running = false;
@@ -1160,6 +1169,8 @@ int main(int argc, char** argv) {
   // Cleanup. Each step is noted in debug/sm-exit.txt first: closing from the HOME menu
   // has been seen to hang on "Closing software", and the file shows the step it hung in.
   ExitStep("loop left");
+  SramWriter_Flush();
+  ExitStep("save file written");
 #if DEBUG_TOOLS
   if (FtpServer_Running()) FtpServer_Stop();
 #endif

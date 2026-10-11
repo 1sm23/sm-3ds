@@ -779,18 +779,38 @@ void RtlCheat(char c) {
   }
 }
 
+// A whole file only: a save cut short by a power loss is smaller, and the one before it is kept
+// beside it (see source/sram_writer.c for the order the files are written in).
+static bool ReadSramFile(const char *path) {
+  FILE *f = fopen(path, "rb");
+  if (!f) return false;
+  uint8 buf[8192];
+  const bool ok = fread(buf, 1, sizeof(buf), f) == sizeof(buf) && fgetc(f) == EOF;
+  fclose(f);
+  if (ok) memcpy(g_sram, buf, sizeof(buf));
+  return ok;
+}
+
 void RtlReadSram(void) {
-  FILE *f = fopen("saves/sm.srm", "rb");
-  if (f) {
-    if (fread(g_sram, 1, 8192, f) != 8192)
-      fprintf(stderr, "Error reading saves/sm.srm\n");
-    fclose(f);
+  static const char *const kFiles[] = { "saves/sm.srm", "saves/sm.srm.tmp", "saves/sm.srm.bak" };
+  for (size_t i = 0; i < sizeof(kFiles) / sizeof(kFiles[0]); i++) {
+    if (!ReadSramFile(kFiles[i])) continue;
+    if (i) fprintf(stderr, "Read %s: saves/sm.srm was missing or incomplete\n", kFiles[i]);
     RtlSynchronizeWholeState();
     ByteArray_Resize(&state_recorder.base_snapshot, 8192);
     memcpy(state_recorder.base_snapshot.data, g_sram, 8192);
+    return;
   }
 }
 
+#ifdef __3DS__
+// The frontend writes it from a thread of its own (source/sram_writer.c): the SD card takes longer
+// than a frame, and the save station's animation is running.
+extern void SramWriter_Queue(const uint8 *data, size_t size);
+void RtlWriteSram(void) {
+  SramWriter_Queue(g_sram, 8192);
+}
+#else
 void RtlWriteSram(void) {
   rename("saves/sm.srm", "saves/sm.srm.bak");
   FILE *f = fopen("saves/sm.srm", "wb");
@@ -801,3 +821,4 @@ void RtlWriteSram(void) {
     fprintf(stderr, "Unable to write saves/sm.srm\n");
   }
 }
+#endif

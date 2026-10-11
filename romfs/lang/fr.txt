@@ -28,6 +28,7 @@ SAVE STATES = ÉTATS SAUVEGARDÉS
 SAVED (NO DETAILS) = SAUVÉ (SANS DÉTAILS)
 Saved to slot %d = Sauvé dans l'emplacement %d
 Could not save slot %d = Échec de la sauvegarde %d
+Could not write the game save = Échec de l'écriture de la sauvegarde
 Loaded slot %d = Emplacement %d chargé
 Slot %d: cannot load = Emplacement %d : chargement impossible
 Game reset = Partie réinitialisée

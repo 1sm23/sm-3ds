@@ -28,6 +28,7 @@ SAVE STATES = ESTATS DESATS
 SAVED (NO DETAILS) = DESAT (SENSE DETALLS)
 Saved to slot %d = Desat a la ranura %d
 Could not save slot %d = No s'ha pogut desar la ranura %d
+Could not write the game save = No s'ha pogut escriure la partida
 Loaded slot %d = Ranura %d carregada
 Slot %d: cannot load = Ranura %d: no es pot carregar
 Game reset = Partida reiniciada
