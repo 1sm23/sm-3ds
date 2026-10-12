@@ -1516,3 +1516,8 @@ Audio off on the 2DS (2026-10-03, WIDE on) changes little: A923 shown 44.3 (46.5
   its own, because `config.ini` is rewritten whole by the UI and would drop an extra line. The viewer is a window (`MODAL_NOTES`) over any
   tab instead of living on one tab, so the prompt's button needs no tab switch; while it is up the prompt hides and its touches go to the
   viewer. The notes of a tag are written when the tag is made (one summary of the whole range, not one per commit), see CLAUDE.md.
+- 2026-10-12: sprites of OAM priority 3 sit on PLAY, nearer than Samus's OBJ, but among sprites the SNES goes by OAM order alone, so an
+  enemy drawn after Samus was behind her with a parallax that said "in front". With the 3D on in gameplay the GPU renderer now emits
+  sprites by priority first (`GpuPpu_SetSpritePriorityOrder`, main.c): the enemy covers Samus as its depth says. Off: the SNES's order,
+  so the CPU/GPU comparison of the tests is untouched. A sprite a room sends to a plane by hand (9DC7's stalk) keeps its OAM place
+  among the priority 2's. Checked on the console with FORCE 3D; other priority 3 sprites that sat under Samus are to watch.
