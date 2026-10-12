@@ -43,10 +43,10 @@
 #include "sram_writer.h"
 #include "ui_lang.h"
 #include "build_config.h"
-#if DEBUG_TOOLS
 #include "cia_install.h"
-#include "debug_link.h"
 #include "ftp_server.h"
+#if DEBUG_TOOLS
+#include "debug_link.h"
 #endif
 
 enum Button {
@@ -792,8 +792,8 @@ int main(int argc, char** argv) {
     RetroAch_Update();
 
     hidScanInput();
-#if DEBUG_TOOLS
     FtpServer_Tick();
+#if DEBUG_TOOLS
     {   // The FTP server was on when the game last ran (or a start found no Wi-Fi): try again every
         // ~2 s until it serves or the DEBUG TOOLS stop it.
       static unsigned ftp_retry = 120;
@@ -802,12 +802,23 @@ int main(int argc, char** argv) {
         FtpServer_Start();
       }
     }
+#else
+    {   // dev-ftp.txt in the data folder: the install-only server, so a new build can be sent over
+        // FTP to a production install. Tried every ~2 s until Wi-Fi is up; never after a CANCEL.
+      static int marker = -1;
+      static unsigned ftp_retry = 120;
+      if (marker < 0) marker = access("dev-ftp.txt", F_OK) == 0;
+      if (marker && !FtpServer_Running() && ++ftp_retry >= 120) {
+        ftp_retry = 0;
+        FtpServer_StartInstallOnly();
+      }
+    }
+#endif
     if (FtpServer_TakeRelaunch()) {   // SITE INSTALL put a new build in place: jump into it, as the updater's restart does
       ExitStep("relaunching into the build just installed");
       if (!CiaInstall_JumpToSelf()) ExitStep("the jump into the new build was refused");
       g_quit_request = true;
     }
-#endif
     {
       float sram_ms;
       if (SramWriter_TakeResult(&sram_ms)) {
@@ -1171,9 +1182,7 @@ int main(int argc, char** argv) {
   ExitStep("loop left");
   SramWriter_Flush();
   ExitStep("save file written");
-#if DEBUG_TOOLS
   if (FtpServer_Running()) FtpServer_Stop();
-#endif
   RetroAch_Shutdown();
   ExitStep("achievements done");
   GpuPpu3ds_Exit();
