@@ -783,7 +783,7 @@ Lessons from mzm that apply directly:
   player's: "jump on B and shoot on Y"). MODERN's four face-button actions (jump, run, shoot, morph ball) can sit on any of
   A / B / X / Y (a permutation: assigning a button that is taken swaps the two), and the three weapons held with R
   (missile kind, X-ray, grapple) each ride on one action's button, one per action, with one rule: the missile is never
-  on the run action's button (run and shoot are the same thumb); a weapon follows its action when actions move. Defaults are today's scheme. L (aim), R (weapon modifier),
+  on the run action's button (R + run is another weapon's shortcut, so no missiles while running: R + run + shoot is not practical to press); a weapon follows its action when actions move. Defaults are today's scheme. L (aim), R (weapon modifier),
   SELECT (missile kind) and START stay. Settable from two places: the game's CONTROLLER SETTING MODE (the MODERN rows stop
   being dim: the button pressed goes to the row, as CLASSIC's do) and the bottom screen (OPTIONS -> CONTROLS, tap a row,
   press the button), which also remaps CLASSIC's seven buttons through the game's own `button_config_*`. Frontend only
