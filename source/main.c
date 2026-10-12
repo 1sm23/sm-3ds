@@ -981,6 +981,7 @@ int main(int argc, char** argv) {
         GpuPpu_SetExtraRows(rows_top, rows_bottom);
         GpuPpu_SetHudX(hud_x);
         GpuPpu_SetHudY(hud_y);
+        GpuPpu_SetSpritePriorityOrder(SmWide_Gameplay() && (osGet3DSliderState() > 0 || g_ui.force_3d));
         GpuPpu_SetLayerShiftX(1, bg2_dx);
         GpuPpu_SetNarrowBg3Rows(wide ? kSmWideHudRows : 0);   // the HUD over the room: WIDE only
         GpuPpu_SetDeferTiles(224, true);   // animated tiles and palette changes: at most 224 decoded a frame, the rest later

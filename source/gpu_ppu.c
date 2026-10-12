@@ -1119,14 +1119,30 @@ static bool EmitHudSprite(const Sprite *sp, int y0, int y1) {
   return true;
 }
 
+static bool g_sprite_priority_order;
+// The 3D is on (gameplay): sprites are emitted by priority first, OAM order within one (EmitSprites).
+void GpuPpu_SetSpritePriorityOrder(bool on) { g_sprite_priority_order = on; }
+
 static bool EmitSprites(int y0, int y1, bool main) {
   // The HUD list is drawn in order, the last quad on top; among sprites the first wins.
   g_quad_plane = 0;
   for (int i = g_sprite_count - 1; i >= 0; i--)
     if (main && g_sprites[i].hud && !EmitHudSprite(&g_sprites[i], y0, y1)) return false;
+  // The first sprite on a pixel wins, so the emission order is the priority order. The SNES's is the OAM order alone
+  // (the priority bits are for the BGs); with the 3D on, a sprite of priority 3 is on a nearer plane than one of 2
+  // (StereoDepth_Plane), so it goes first too: an enemy then covers Samus as its depth says, not the other way round.
+  // A sprite the room sends to a plane by hand keeps its OAM place among the priority 2's (9DC7's stalk, under Samus).
+  const bool by_level = g_sprite_priority_order;
+  for (int pass = 0; pass < (by_level ? 4 : 1); pass++) {
+    const int pass_level = 14 - pass * 4;
   for (int i = 0; i < g_sprite_count; i++) {
     const Sprite *sp = &g_sprites[i];
     if (sp->hud) continue;
+    if (by_level) {
+      const int prio = (sp->level - 2) / 4;
+      const bool by_hand = g_plane_rule && g_plane_rule(4, prio) >= 0;
+      if ((by_hand ? 10 : sp->level) != pass_level) continue;
+    }
     const int flags = kGpuQuadObj | (sp->hflip ? kGpuQuadFlipX : 0) | (sp->vflip ? kGpuQuadFlipY : 0) |
                       (main && sp->math ? kGpuQuadMath : 0);
     UsePlaneRule(4, (sp->level - 2) / 4);
@@ -1138,6 +1154,7 @@ static bool EmitSprites(int y0, int y1, bool main) {
       const int sy = sp->vflip ? sp->ay + sp->size - h - skip : sp->ay + skip;
       if (!AddQuadWin(&g_atlas, sp->x, r0, sp->size, h, sp->ax, sy, sp->level, flags, main ? 0 : 1, 4)) return false;
     }
+  }
   }
   g_quad_plane = 0;
   return true;
