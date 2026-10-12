@@ -17,7 +17,7 @@ void ModernControls_SetMissile(int item);
 
 // The remappable part (docs/modern-controls.md, "Remapping"). Four actions sit on the four face
 // buttons, a permutation; three weapons, held with R, each ride on one action's button, and the
-// missile is never on the run action (same thumb). Weapons follow their action when the actions
+// missile is never on the run action: R + run is the shortcut of another weapon, so missiles are not fired while running (R + run + shoot is not practical to press). Weapons follow their action when the actions
 // move. The defaults are the scheme as it always was: A jump, B run, X shoot, Y morph ball, and
 // R + X missile, R + B X-ray, R + Y grapple.
 typedef enum { kModernJump, kModernRun, kModernShoot, kModernMorph, kModernActions } ModernAction;

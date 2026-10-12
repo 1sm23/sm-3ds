@@ -168,7 +168,8 @@ Two small tables, both frontend state in `config.ini`:
   taken button swaps the two actions. Default A, B, X, Y.
 - **Weapons**: missile kind, X-ray, grapple, each riding on one action's button, one weapon per action, held
   with R. Default shoot's, run's and morph's (R + X, R + B, R + Y). Rule: the missile is never on the run
-  action's button. A button with a weapon does that weapon while R is held instead of its action; with no
+  action's button (R + run is another weapon's shortcut, so there are no missiles while running: R + run + shoot
+  is not practical to press). A button with a weapon does that weapon while R is held instead of its action; with no
   weapon on it, it does its action (R + the jump button is a jump with the missile selected). Because weapons
   ride on actions, moving an action moves its weapon with it and the rule cannot break that way.
 
