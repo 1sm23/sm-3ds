@@ -43,10 +43,10 @@
 #include "sram_writer.h"
 #include "ui_lang.h"
 #include "build_config.h"
-#if DEBUG_TOOLS
 #include "cia_install.h"
-#include "debug_link.h"
 #include "ftp_server.h"
+#if DEBUG_TOOLS
+#include "debug_link.h"
 #endif
 
 enum Button {
@@ -541,12 +541,21 @@ static int CirclePadAsDpad(void) {
   return bits;
 }
 
+static const uint8 kKbdRemap[] = { 0, 4, 5, 6, 7, 2, 3, 8, 0, 9, 1, 10, 11 };
+
+// The frontend's pad bit (modern_controls.h: B Y SELECT START Up Down Left Right A X L R) of a HID
+// button, or -1 for one that is not a game button.
+static int PadBitOfButton(uint32 j) {
+  const int idx = idx_of_btn(j);
+  if (idx < 0 || 1 + idx > kKeys_Controls_Last) return -1;
+  return kKbdRemap[1 + idx];
+}
+
 static void HandleCommand(uint32 j, bool pressed) {
   int idx = idx_of_btn(j);
   if (idx < 0) return;
   j = 1 + idx;
   if (j <= kKeys_Controls_Last) {
-    static const uint8 kKbdRemap[] = { 0, 4, 5, 6, 7, 2, 3, 8, 0, 9, 1, 10, 11 };
     if (pressed)
       g_input1_state |= 1 << kKbdRemap[j];
     else
@@ -792,8 +801,8 @@ int main(int argc, char** argv) {
     RetroAch_Update();
 
     hidScanInput();
-#if DEBUG_TOOLS
     FtpServer_Tick();
+#if DEBUG_TOOLS
     {   // The FTP server was on when the game last ran (or a start found no Wi-Fi): try again every
         // ~2 s until it serves or the DEBUG TOOLS stop it.
       static unsigned ftp_retry = 120;
@@ -802,12 +811,26 @@ int main(int argc, char** argv) {
         FtpServer_Start();
       }
     }
-    if (FtpServer_TakeRelaunch()) {   // SITE INSTALL put a new build in place: jump into it, as the updater's restart does
-      ExitStep("relaunching into the build just installed");
-      if (!CiaInstall_JumpToSelf()) ExitStep("the jump into the new build was refused");
-      g_quit_request = true;
+#else
+    {   // dev-ftp.txt in the data folder: the install-only server, so a new build can be sent over
+        // FTP to a production install. Tried every ~2 s until Wi-Fi is up; never after a CANCEL.
+      static int marker = -1;
+      static unsigned ftp_retry = 120;
+      if (marker < 0) marker = access("dev-ftp.txt", F_OK) == 0;
+      if (marker && !FtpServer_Running() && ++ftp_retry >= 120) {
+        ftp_retry = 0;
+        FtpServer_StartInstallOnly();
+      }
     }
 #endif
+    if (FtpServer_TakeRelaunch()) {   // SITE INSTALL put a new build in place: close as usual and let the system start it
+      // The chainloader is run by libctru when the process exits (aptExit), after the whole teardown below. Jumping at
+      // once (APT_DoApplicationJump) had the system close the game under its feet while the GPU was still in use, and
+      // the console froze (2026-10-12).
+      ExitStep("relaunching into the build just installed");
+      aptSetChainloaderToSelf();
+      g_quit_request = true;
+    }
     {
       float sram_ms;
       if (SramWriter_TakeResult(&sram_ms)) {
@@ -827,8 +850,13 @@ int main(int argc, char** argv) {
 #if DEBUG_TOOLS
       DebugLink_Poll(&down, &up, g_logic_frames);   // buttons and requests from the PC (SITE over FTP)
 #endif
+      // A CONTROLS row of the bottom screen waiting for its new button takes the press, not the game.
+      const bool capturing = BottomUi_CapturingButton();
       for (int b = 0; b <= BTN_Y; b++) {
-        if (down & BIT(b)) HandleCommand(b, true);
+        if (down & BIT(b)) {
+          if (capturing) BottomUi_ButtonCaptured(PadBitOfButton(b));
+          else HandleCommand(b, true);
+        }
         if (up & BIT(b)) HandleCommand(b, false);
       }
       // The touch screen is 320x240, the bottom UI's own coordinates.
@@ -967,6 +995,7 @@ int main(int argc, char** argv) {
         GpuPpu_SetExtraRows(rows_top, rows_bottom);
         GpuPpu_SetHudX(hud_x);
         GpuPpu_SetHudY(hud_y);
+        GpuPpu_SetSpritePriorityOrder(SmWide_Gameplay() && (osGet3DSliderState() > 0 || g_ui.force_3d));
         GpuPpu_SetLayerShiftX(1, bg2_dx);
         GpuPpu_SetNarrowBg3Rows(wide ? kSmWideHudRows : 0);   // the HUD over the room: WIDE only
         GpuPpu_SetDeferTiles(224, true);   // animated tiles and palette changes: at most 224 decoded a frame, the rest later
@@ -1171,9 +1200,7 @@ int main(int argc, char** argv) {
   ExitStep("loop left");
   SramWriter_Flush();
   ExitStep("save file written");
-#if DEBUG_TOOLS
   if (FtpServer_Running()) FtpServer_Stop();
-#endif
   RetroAch_Shutdown();
   ExitStep("achievements done");
   GpuPpu3ds_Exit();

@@ -246,9 +246,20 @@ relaunch. Nothing needs FBI or closing the game:
 ```sh
 IP=$(cat .3ds_ftp_ip)
 ./build_3ds.sh --install "$IP"                      # build, upload, install over the running game, relaunch
-curl "ftp://$IP:5000/3ds/Super%20Metroid%203DS/debug/"   # list / fetch the debug files
+curl -u sm3ds:5ZSf8NWHthXUuUJx "ftp://$IP:5000/3ds/Super%20Metroid%203DS/debug/"   # list / fetch the debug files
 tools/sm-link/sm-link.py wait && tools/sm-link/sm-link.py run SCRIPT   # drive the game
 ```
+
+**The FTP login** (debug builds and the install-only server below): user `sm3ds`, password
+`5ZSf8NWHthXUuUJx`, defined in `source/ftp_credentials.h` (the tools read it from there; keep both in
+step). Plain `curl` needs `-u sm3ds:5ZSf8NWHthXUuUJx`. The password is in the repository and the
+binary: it keeps an accidental client out, it is not a secret.
+
+**Production builds** have no FTP unless `dev-ftp.txt` exists in `/3ds/Super Metroid 3DS/` (the
+owner creates it once, over FTP, while a debug build is installed): then they start an
+install-only server (only `/3ds/Super Metroid 3DS/update/`, no remote control, the address and a
+CANCEL button on the bottom screen), enough for `./build_3ds.sh --install`. See `docs/debug-tools.md`.
+Players never see it; do not put it in the release notes.
 
 `tools/sm-link/sm-link.py` presses buttons, taps, saves and loads states, takes screenshots and
 reads state and memory (`docs/debug-tools.md`, "FTP SERVER and remote control"). Say before

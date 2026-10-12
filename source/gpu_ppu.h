@@ -181,6 +181,10 @@ void GpuPpu_SetHudX(int x);
 // top != bottom). HUD sprites move with it.
 void GpuPpu_SetHudY(int y);
 
+// With the 3D on in gameplay, sprites of a higher priority cover those of a lower one whatever their OAM order (the SNES
+// goes by OAM order alone), so an enemy on a nearer plane than Samus is also drawn over her. Off: the SNES's order.
+void GpuPpu_SetSpritePriorityOrder(bool on);
+
 // Added to a BG layer's horizontal scroll on every line of the next frames (0..2 = BG1..3).
 void GpuPpu_SetLayerShiftX(int layer, int dx);
 

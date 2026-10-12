@@ -15,3 +15,5 @@ void FtpServer_Stats(unsigned *sent, unsigned *received, bool *connected) {
 const char *FtpServer_Notice(void) { return NULL; }
 void FtpServer_Tick(void) {}
 bool FtpServer_TakeRelaunch(void) { return false; }
+bool FtpServer_InstallOnly(void) { return false; }
+void FtpServer_Cancel(void) {}
