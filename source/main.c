@@ -541,12 +541,21 @@ static int CirclePadAsDpad(void) {
   return bits;
 }
 
+static const uint8 kKbdRemap[] = { 0, 4, 5, 6, 7, 2, 3, 8, 0, 9, 1, 10, 11 };
+
+// The frontend's pad bit (modern_controls.h: B Y SELECT START Up Down Left Right A X L R) of a HID
+// button, or -1 for one that is not a game button.
+static int PadBitOfButton(uint32 j) {
+  const int idx = idx_of_btn(j);
+  if (idx < 0 || 1 + idx > kKeys_Controls_Last) return -1;
+  return kKbdRemap[1 + idx];
+}
+
 static void HandleCommand(uint32 j, bool pressed) {
   int idx = idx_of_btn(j);
   if (idx < 0) return;
   j = 1 + idx;
   if (j <= kKeys_Controls_Last) {
-    static const uint8 kKbdRemap[] = { 0, 4, 5, 6, 7, 2, 3, 8, 0, 9, 1, 10, 11 };
     if (pressed)
       g_input1_state |= 1 << kKbdRemap[j];
     else
@@ -841,8 +850,13 @@ int main(int argc, char** argv) {
 #if DEBUG_TOOLS
       DebugLink_Poll(&down, &up, g_logic_frames);   // buttons and requests from the PC (SITE over FTP)
 #endif
+      // A CONTROLS row of the bottom screen waiting for its new button takes the press, not the game.
+      const bool capturing = BottomUi_CapturingButton();
       for (int b = 0; b <= BTN_Y; b++) {
-        if (down & BIT(b)) HandleCommand(b, true);
+        if (down & BIT(b)) {
+          if (capturing) BottomUi_ButtonCaptured(PadBitOfButton(b));
+          else HandleCommand(b, true);
+        }
         if (up & BIT(b)) HandleCommand(b, false);
       }
       // The touch screen is 320x240, the bottom UI's own coordinates.

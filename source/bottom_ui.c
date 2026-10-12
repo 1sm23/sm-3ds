@@ -1660,8 +1660,8 @@ static void ResetModalTouch(int x, int y) {
 
 static bool g_controls_help_modern;   // the tab shown
 static Rect ControlsTabRect(int i) { return (Rect){ 150 + i * 80, 30, 76, 16 }; }
-static Rect ControlsCloseRect(void) { return (Rect){ 216, 212, 88, 18 }; }
-static Rect ControlsAutoBombRect(void) { return (Rect){ 16, 212, 192, 18 }; }   // AUTO BOMB JUMP: ON / OFF
+static Rect ControlsCloseRect(void) { return (Rect){ 216, 214, 88, 18 }; }
+static Rect ControlsAutoBombRect(void) { return (Rect){ 16, 214, 192, 18 }; }   // AUTO BOMB JUMP: ON / OFF
 
 static void OpenControlsHelp(void) {
   g_controls_help_modern = ModernControls_On();
@@ -1710,46 +1710,139 @@ static void DrawKeys(Surface s, int x, int y, const char *keys) {
   }
 }
 
+// A row of the window that can be changed: which button it is on. Modern: an action's button
+// (kEditAction + ModernAction), a weapon's (kEditWeapon + ModernWeapon); original: one of the game's
+// seven buttons (kEditClassic + its index into ClassicConfig).
+enum { kEditNone = 0, kEditAction = 1, kEditWeapon = 5, kEditClassic = 8 };
+
+static int g_ctl_capture;   // the row waiting for its new button (kEdit...), or kEditNone
+
+// The game's seven button assignments, in the order of the window's rows.
+static uint16_t *ClassicConfig(int i) {
+  switch (i) {
+  case 0: return &button_config_jump_a;
+  case 1: return &button_config_run_b;
+  case 2: return &button_config_shoot_x;
+  case 3: return &button_config_itemswitch;
+  case 4: return &button_config_itemcancel_y;
+  case 5: return &button_config_aim_up_R;
+  default: return &button_config_aim_down_L;
+  }
+}
+
+// A key's SNES mask for a frontend pad bit (bit i is the button 0x8000 >> i).
+static uint16_t SnesMaskOfPadBit(int bit) { return (uint16_t)(0x8000 >> bit); }
+
+bool BottomUi_CapturingButton(void) { return g_modal == MODAL_CONTROLS && g_ctl_capture != kEditNone; }
+
+// The pad bit a face button has (A B X Y), or -1.
+static int FaceOfPadBit(int bit) {
+  switch (bit) {
+  case 8: return kFaceA;
+  case 0: return kFaceB;
+  case 9: return kFaceX;
+  case 1: return kFaceY;
+  default: return -1;
+  }
+}
+
+void BottomUi_ButtonCaptured(int pad_bit) {
+  if (!BottomUi_CapturingButton() || pad_bit < 0) return;
+  const int edit = g_ctl_capture;
+  if (edit >= kEditClassic) {
+    // The original's buttons: any of A B X Y L R SELECT, and the action that had it takes this one's old one.
+    if (pad_bit == 3 || (pad_bit >= 4 && pad_bit <= 7)) return;   // START and the D-pad are not assignable
+    uint16_t *mine = ClassicConfig(edit - kEditClassic);
+    const uint16_t mask = SnesMaskOfPadBit(pad_bit);
+    for (int i = 0; i < 7; i++) {
+      uint16_t *other = ClassicConfig(i);
+      if (other != mine && *other == mask) *other = *mine;
+    }
+    *mine = mask;
+  } else {
+    const int face = FaceOfPadBit(pad_bit);
+    if (face < 0) return;   // the modern scheme's buttons are the four on the right
+    if (edit >= kEditWeapon) {
+      if (!ModernControls_SetWeaponButton((ModernWeapon)(edit - kEditWeapon), (ModernFace)face)) {
+        BottomUi_Toast(Tr(kStrCtlMissileNotRun));
+      }
+    } else {
+      ModernControls_SetButton((ModernAction)(edit - kEditAction), (ModernFace)face);
+    }
+  }
+  g_ctl_capture = kEditNone;
+  g_dirty = 2;
+}
+
+// The window's rows for the tab shown, as keys and what they do, with what each one changes.
+typedef struct { char keys[16]; UiStr what; int edit; } ControlsRow;
+enum { kControlsRows = 12, kControlsY0 = 54, kControlsPitch = 12 };
+
+static int ControlsRows(ControlsRow rows[kControlsRows]) {
+  int n = 0;
+  if (!g_controls_help_modern) {
+    const struct { int cfg; UiStr what; } kClassic[] = {
+      { 0, kStrCtlJump }, { 1, kStrCtlRun }, { 2, kStrCtlFire }, { 3, kStrCtlChoose }, { 4, kStrCtlCancel },
+      { 5, kStrCtlAimUp }, { 6, kStrCtlAimDown },
+    };
+    rows[n++] = (ControlsRow){ "DPAD", kStrCtlMove, kEditNone };
+    for (size_t i = 0; i < sizeof(kClassic) / sizeof(kClassic[0]); i++) {
+      static const char *const kDefault[7] = { "A", "B", "X", "SELECT", "Y", "R", "L" };
+      ControlsRow r = { "", kClassic[i].what, kEditClassic + kClassic[i].cfg };
+      snprintf(r.keys, sizeof(r.keys), "%s", ButtonName(*ClassicConfig(kClassic[i].cfg), kDefault[kClassic[i].cfg]));
+      rows[n++] = r;
+    }
+    rows[n++] = (ControlsRow){ "START", kStrCtlPause, kEditNone };
+  } else {
+    char b[kModernActions][4], w[kModernWeapons][8];
+    for (int a = 0; a < kModernActions; a++) snprintf(b[a], sizeof(b[a]), "%s", ModernControls_FaceName(ModernControls_ButtonOf((ModernAction)a)));
+    for (int i = 0; i < kModernWeapons; i++)
+      snprintf(w[i], sizeof(w[i]), "R+%s", ModernControls_FaceName(ModernControls_WeaponButton((ModernWeapon)i)));
+    const ControlsRow kModern[] = {
+      { "DPAD", kStrCtlMove, kEditNone },
+      { "", kStrCtlJump, kEditAction + kModernJump }, { "", kStrCtlRun, kEditAction + kModernRun },
+      { "", kStrCtlFireBomb, kEditAction + kModernShoot }, { "", kStrCtlMorph, kEditAction + kModernMorph },
+      { "L", kStrCtlAimUp, kEditNone }, { "L+DOWN", kStrCtlAimDownLock, kEditNone },
+      { "", kStrCtlMissile, kEditWeapon + kModernMissile }, { "", kStrCtlGrapple, kEditWeapon + kModernGrapple },
+      { "", kStrCtlXray, kEditWeapon + kModernXray },
+      { "SELECT", kStrCtlMissileKind, kEditNone }, { "START", kStrCtlPause, kEditNone },
+    };
+    for (size_t i = 0; i < sizeof(kModern) / sizeof(kModern[0]); i++) {
+      ControlsRow r = kModern[i];
+      if (r.edit >= kEditWeapon) snprintf(r.keys, sizeof(r.keys), "%s", w[r.edit - kEditWeapon]);
+      else if (r.edit >= kEditAction) snprintf(r.keys, sizeof(r.keys), "%s", b[r.edit - kEditAction]);
+      rows[n++] = r;
+    }
+  }
+  return n;
+}
+
+static Rect ControlsResetRect(void) { return (Rect){ 80, 30, 64, 16 }; }
+
 static void DrawControlsModal(Surface s) {
+  enum { kTextX = 100 };
   UiFillRect(s, 8, 26, 304, 210, COL_MODAL_EDGE);
   UiFillRect(s, 9, 27, 302, 208, COL_MODAL);
   UiDrawText(s, 16, 34, 1, COL_TITLE, Tr(kStrControls));
+  UiDrawBoxLabel(s, ControlsResetRect(), COL_BOX, COL_BOX_EDGE, COL_TEXT, Pressed(ControlsResetRect()), Tr(kStrReset));
   for (int i = 0; i < 2; i++) {
     const Rect t = ControlsTabRect(i);
     const bool on = (i == 1) == g_controls_help_modern;
     UiDrawBoxLabel(s, t, on ? RGB(28, 54, 44) : COL_BOX, on ? RGB(90, 220, 150) : COL_BOX_EDGE,
                    on ? RGB(180, 255, 210) : COL_DIM, Pressed(t), Tr(i ? kStrModern : kStrClassic));
   }
-  typedef struct { const char *keys; UiStr what; } Row;
-  enum { kRows = 12, kY0 = 54, kPitch = 13, kTextX = 100 };
-  Row rows[kRows];
-  int n = 0;
-  if (!g_controls_help_modern) {
-    const struct { uint16_t mask; const char *def; UiStr what; } kClassic[] = {
-      { button_config_jump_a, "A", kStrCtlJump }, { button_config_run_b, "B", kStrCtlRun },
-      { button_config_shoot_x, "X", kStrCtlFire }, { button_config_itemswitch, "SELECT", kStrCtlChoose },
-      { button_config_itemcancel_y, "Y", kStrCtlCancel }, { button_config_aim_up_R, "R", kStrCtlAimUp },
-      { button_config_aim_down_L, "L", kStrCtlAimDown },
-    };
-    rows[n++] = (Row){ "DPAD", kStrCtlMove };
-    for (size_t i = 0; i < sizeof(kClassic) / sizeof(kClassic[0]); i++)
-      rows[n++] = (Row){ ButtonName(kClassic[i].mask, kClassic[i].def), kClassic[i].what };
-    rows[n++] = (Row){ "START", kStrCtlPause };
-  } else {
-    static const Row kModern[] = {
-      { "DPAD", kStrCtlMove }, { "A", kStrCtlJump }, { "B", kStrCtlRun }, { "X", kStrCtlFireBomb },
-      { "Y", kStrCtlMorph }, { "L", kStrCtlAimUp }, { "L+DOWN", kStrCtlAimDownLock }, { "R+X", kStrCtlMissile },
-      { "R+Y", kStrCtlGrapple }, { "R+B", kStrCtlXray }, { "SELECT", kStrCtlMissileKind }, { "START", kStrCtlPause },
-    };
-    for (size_t i = 0; i < sizeof(kModern) / sizeof(kModern[0]) && n < kRows; i++) rows[n++] = kModern[i];
-  }
+  ControlsRow rows[kControlsRows];
+  const int n = ControlsRows(rows);
   for (int i = 0; i < n; i++) {
-    const int y = kY0 + i * kPitch;
-    if (i & 1) UiFillRect(s, 12, y - 1, 296, kPitch, COL_PANEL);
-    DrawKeys(s, 16, y, rows[i].keys);
-    UiDrawText(s, kTextX, y + 2, 1, COL_TEXT, Tr(rows[i].what));
+    const int y = kControlsY0 + i * kControlsPitch;
+    const bool waiting = rows[i].edit != kEditNone && rows[i].edit == g_ctl_capture;
+    if (waiting) UiFillRect(s, 12, y - 1, 296, kControlsPitch, RGB(60, 52, 20));
+    else if (i & 1) UiFillRect(s, 12, y - 1, 296, kControlsPitch, COL_PANEL);
+    if (waiting) UiDrawText(s, 16, y + 2, 1, COL_WARN, "...");
+    else DrawKeys(s, 16, y, rows[i].keys);
+    UiDrawText(s, kTextX, y + 2, 1, waiting ? COL_WARN : COL_TEXT, Tr(waiting ? kStrCtlPressButton : rows[i].what));
   }
-  if (!g_controls_help_modern) UiDrawText(s, 16, kY0 + n * kPitch + 6, 1, COL_DIM, Tr(kStrCtlConfigNote));
+  UiDrawText(s, 16, kControlsY0 + n * kControlsPitch + 3, 1, COL_DIM, Tr(kStrCtlConfigNote));
   // Both schemes: the bomb button held in the morph ball climbs by itself (auto_bomb.c).
   {
     char label[64];
@@ -1762,10 +1855,37 @@ static void DrawControlsModal(Surface s) {
 }
 
 static void ControlsModalTouch(int x, int y) {
-  if (UiIn(ControlsCloseRect(), x, y)) g_modal = MODAL_NONE;
-  if (UiIn(ControlsAutoBombRect(), x, y)) AutoBomb_Set(!AutoBomb_On());
+  if (UiIn(ControlsCloseRect(), x, y)) {
+    g_modal = MODAL_NONE;
+    g_ctl_capture = kEditNone;
+  } else if (UiIn(ControlsAutoBombRect(), x, y)) {
+    AutoBomb_Set(!AutoBomb_On());
+  } else if (UiIn(ControlsResetRect(), x, y)) {
+    g_ctl_capture = kEditNone;
+    if (g_controls_help_modern) {
+      ModernControls_ResetMapping();
+    } else {   // the game's own defaults (OptionsMenuControllerFunc_8)
+      button_config_shoot_x = 0x40;
+      button_config_jump_a = 0x80;
+      button_config_run_b = 0x8000;
+      button_config_itemcancel_y = 0x4000;
+      button_config_itemswitch = 0x2000;
+      button_config_aim_up_R = 0x10;
+      button_config_aim_down_L = 0x20;
+    }
+  }
   for (int i = 0; i < 2; i++)
-    if (UiIn(ControlsTabRect(i), x, y)) g_controls_help_modern = i == 1;
+    if (UiIn(ControlsTabRect(i), x, y)) {
+      g_controls_help_modern = i == 1;
+      g_ctl_capture = kEditNone;
+    }
+  // A row: it waits for the new button (the same row again, or another, changes the wait).
+  ControlsRow rows[kControlsRows];
+  const int n = ControlsRows(rows);
+  for (int i = 0; i < n; i++) {
+    const Rect r = { 12, kControlsY0 + i * kControlsPitch - 1, 296, kControlsPitch };
+    if (UiIn(r, x, y) && rows[i].edit != kEditNone) g_ctl_capture = g_ctl_capture == rows[i].edit ? kEditNone : rows[i].edit;
+  }
 }
 
 // ---- STATUS help window -----------------------------------------------------------
@@ -1794,7 +1914,13 @@ static void DrawStatusHelpModal(Surface s) {
     y += 11;
     for (int k = 0; k < 2 && kParts[i].paras[k] != kStrCount; k++) {
       UiFillRect(s, 16, y + 2, 3, 3, COL_DIM);
-      y += DrawWrapped(s, 24, y, 47, 6, COL_TEXT, Tr(kParts[i].paras[k])) * 10 + 2;
+      char para[256];
+      const char *text = Tr(kParts[i].paras[k]);
+      if (kParts[i].paras[k] == kStrStHelpModernTap) {   // names the button the missile is held with (R + that one)
+        snprintf(para, sizeof(para), text, ModernControls_FaceName(ModernControls_WeaponButton(kModernMissile)));
+        text = para;
+      }
+      y += DrawWrapped(s, 24, y, 47, 6, COL_TEXT, text) * 10 + 2;
     }
     y += 4;
   }
@@ -2861,6 +2987,7 @@ static void DrawUnlockNotice(Surface s) {
 typedef struct {
   int tab, pacing, audio, fps_overlay, speedup, pixel_perfect, wide, language, map_zoom, auto_update, update_beta, hud_hide, spoilers,
       controls, missile, auto_bomb;
+  unsigned mapping;   // ModernControls_MappingKey
   // DEBUG_TOOLS builds only: the DEBUG TOOLS the next launch finds as they were left.
   int debug_log, debug_log_direct, debug_ftp;
 } SavedOptions;
@@ -2868,7 +2995,7 @@ typedef struct {
 static SavedOptions CurrentOptions(void) {
   return (SavedOptions){ g_tab, g_ui.pacing, g_ui.audio_on, g_ui.fps_overlay, g_ui.new3ds_speedup,
                          g_ui.pixel_perfect, g_ui.wide, g_ui_lang, g_map_zoom, g_ui.auto_update, g_ui.update_beta, g_ui.hud_auto_hide,
-                         g_show_spoilers, ModernControls_On(), ModernControls_Missile(), AutoBomb_On(),
+                         g_show_spoilers, ModernControls_On(), ModernControls_Missile(), AutoBomb_On(), ModernControls_MappingKey(),
                          g_debug_log, g_debug_log_direct, g_debug_ftp };
 }
 
@@ -2885,6 +3012,12 @@ static void SaveConfig(void) {
           o.tab, o.pacing, o.audio, o.fps_overlay, o.speedup, o.pixel_perfect, o.wide,
           UiLang_Code(o.language), o.map_zoom, o.auto_update, o.update_beta, o.hud_hide, o.spoilers,
           o.controls ? "modern" : "classic", o.missile, o.auto_bomb);
+  // The modern buttons: each action's face button, and the action each weapon rides on (R + that button).
+  for (int a = 0; a < kModernActions; a++)
+    fprintf(f, "modern_%s=%s\n", ModernControls_ActionName((ModernAction)a), ModernControls_FaceName(ModernControls_ButtonOf((ModernAction)a)));
+  static const char *const kWeaponKeys[kModernWeapons] = { "missile", "xray", "grapple" };
+  for (int w = 0; w < kModernWeapons; w++)
+    fprintf(f, "modern_with_%s=%s\n", kWeaponKeys[w], ModernControls_ActionName(ModernControls_WeaponAction((ModernWeapon)w)));
 #if DEBUG_TOOLS
   fprintf(f, "debug_log=%d\ndebug_log_direct=%d\ndebug_ftp=%d\n", o.debug_log, o.debug_log_direct, o.debug_ftp);
 #endif
@@ -2896,6 +3029,35 @@ static bool TabVisible(Tab t) {
   const int n = VisibleTabs(tabs);
   for (int i = 0; i < n; i++)
     if (tabs[i] == t) return true;
+  return false;
+}
+
+// One `modern_*` line of config.ini: an action's button ("modern_jump=B") or the action a weapon
+// rides on ("modern_with_xray=run"). An invalid line, or one that would put the missile on run,
+// is ignored. Weapons are read after the buttons because the file lists them so.
+static bool LoadModernMapping(const char *key, const char *value) {
+  static const char *const kWeaponKeys[kModernWeapons] = { "missile", "xray", "grapple" };
+  ModernAction a;
+  ModernFace f;
+  for (int i = 0; i < kModernWeapons; i++) {
+    char want[24];
+    snprintf(want, sizeof(want), "modern_with_%s", kWeaponKeys[i]);
+    if (!strcmp(key, want)) {
+      if (ModernControls_ActionFromName(value, &a)) {
+        for (int j = 0; j < kFaceButtons; j++)
+          if (ModernControls_ButtonOf(a) == (ModernFace)j) ModernControls_SetWeaponButton((ModernWeapon)i, (ModernFace)j);
+      }
+      return true;
+    }
+  }
+  for (int i = 0; i < kModernActions; i++) {
+    char want[24];
+    snprintf(want, sizeof(want), "modern_%s", ModernControls_ActionName((ModernAction)i));
+    if (!strcmp(key, want)) {
+      if (ModernControls_FaceFromName(value, &f)) ModernControls_SetButton((ModernAction)i, f);
+      return true;
+    }
+  }
   return false;
 }
 
@@ -2922,6 +3084,8 @@ static void LoadConfig(void) {
       SetControls(!strcmp(code, "modern"));
       continue;
     }
+    if (!strncmp(line, "modern_", 7) && sscanf(line, "%31[^=]=%15[^\r\n]", key, code) == 2 && LoadModernMapping(key, code))
+      continue;
     if (sscanf(line, "%31[^=]=%d", key, &v) != 2) continue;
     if (!strcmp(key, "tab") && v >= 0 && v < TAB_COUNT && TabVisible((Tab)v)) g_tab = (Tab)v;
     else if (!strcmp(key, "pacing") && v >= 0 && v < kPaceCount) g_ui.pacing = (int)v;
@@ -3421,7 +3585,21 @@ static void ControlsMenuSetModern(bool on) {
   SetControls(on);
   g_dirty = 2;
 }
-static const RtlControlsMenu kControlsMenu = { ControlsMenuModern, ControlsMenuSetModern };
+// The game's CONTROLLER SETTING MODE, MODERN's rows (game_text_screens.c ControllerList): a face button
+// pressed on a row that can change goes to the table. Row 6 (POWER BOMB) is the missile's button.
+static bool ControlsMenuAssign(int row, int face) {
+  switch (row) {
+  case 0: ModernControls_SetButton(kModernJump, (ModernFace)face); return true;
+  case 1: ModernControls_SetButton(kModernRun, (ModernFace)face); return true;
+  case 2: ModernControls_SetButton(kModernShoot, (ModernFace)face); return true;
+  case 3: ModernControls_SetButton(kModernMorph, (ModernFace)face); return true;
+  case 5: case 6: return ModernControls_SetWeaponButton(kModernMissile, (ModernFace)face);
+  case 7: return ModernControls_SetWeaponButton(kModernGrapple, (ModernFace)face);
+  case 8: return ModernControls_SetWeaponButton(kModernXray, (ModernFace)face);
+  default: return false;
+  }
+}
+static const RtlControlsMenu kControlsMenu = { ControlsMenuModern, ControlsMenuSetModern, ControlsMenuAssign };
 
 // ---- Init -------------------------------------------------------------------
 

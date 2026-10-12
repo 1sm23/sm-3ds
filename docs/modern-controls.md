@@ -136,8 +136,8 @@ The title screen's demos replay recorded SNES input and show no buttons: unaffec
   row shows the game's left-right D-pad (SPECIAL SETTING MODE's "change") and CLASSIC / MODERN, the
   chosen one bright; left and right switch it from any row, so the cursor never stops on it. With
   CLASSIC the game's 7 button rows, END and RESET TO
-  DEFAULT follow, assigned, checked and reset by the game's own functions; with MODERN 11 rows show
-  the modern buttons and combinations, dim and not assignable, then END. The game's code moves the
+  DEFAULT follow, assigned, checked and reset by the game's own functions; with MODERN 10 rows show
+  the modern buttons and combinations (seven of them assignable, see Remapping), then END. The game's code moves the
   cursor and the first row shown (`RtlControlsMenu`, `g_rtl_ctl_cursor` / `g_rtl_ctl_top` in
   `sm/src/sm_rtl.h`); `game_text_screens.c` draws the rows over the game's list every frame, with
   the button icons from the ROM's table (`RtlCtlButtonIcon`), and the font's two D-pads (arrows left
@@ -159,6 +159,35 @@ ammo, the grapple and Samus's pose each frame; `AMMO=1` gives ammunition with it
 missile (also with both pressed on the same frame), SELECT then R + X a super missile, L aims up, Down
 with L held aims down and stays down after Down is let go until Up, without crouching, R + B starts the X-ray and letting go ends it, R + Y
 fires the grapple, R + X in morph ball lays a power bomb.
+
+## Remapping (P4.18)
+
+Two small tables, both frontend state in `config.ini`:
+
+- **Actions**: jump, run, shoot, morph ball, each on one of A / B / X / Y. A permutation: giving an action a
+  taken button swaps the two actions. Default A, B, X, Y.
+- **Weapons**: missile kind, X-ray, grapple, each riding on one action's button, one weapon per action, held
+  with R. Default shoot's, run's and morph's (R + X, R + B, R + Y). Rule: the missile is never on the run
+  action's button. A button with a weapon does that weapon while R is held instead of its action; with no
+  weapon on it, it does its action (R + the jump button is a jump with the missile selected). Because weapons
+  ride on actions, moving an action moves its weapon with it and the rule cannot break that way.
+
+The translation (`ModernControls_Translate`) stops naming physical buttons: it resolves each action and weapon
+through the tables. Two things already done by it now have to follow the table, not B and Y: the run bit the X-ray
+needs (sent while R and the X-ray's button are held, wherever that button is) and the fire bit the grapple needs.
+R + the jump button, with no weapon there, is a jump with the missile selected, as today.
+
+Saved as `modern_jump=B`, `modern_run=`, `modern_shoot=`, `modern_morph=` (the button) and
+`modern_with_missile=shoot`, `modern_with_xray=run`, `modern_with_grapple=morph` (the action) in `config.ini`;
+what does not read as a valid name is ignored.
+
+UI, both writing the same table: the rows of CONTROLLER SETTING MODE (JUMP, DASH, SHOT / BOMB, MORPH BALL, MISSILE,
+GRAPPLING BEAM and X-RAY SCOPE take the face button pressed on them; AIM, POWER BOMB (it is the missile's) and
+MISSILE / SUPER stay dim), and OPTIONS -> CONTROLS -> "?" on the bottom screen (tap a row, press the button: the main
+loop gives that press to the window, `BottomUi_CapturingButton`, and the game does not see it; RESET puts the
+scheme's defaults back). The same window remaps CLASSIC's seven buttons by writing the game's `button_config_*`
+(A B X Y L R SELECT, the one that had the button takes this one's old one). Button names in the item boxes (`{X}`, `{B}`...) mean the action
+that button has by default and resolve to the button in use; the "?" window and STATUS's help read the tables.
 
 ## Open, to settle while trying it
 

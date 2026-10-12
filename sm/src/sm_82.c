@@ -5022,6 +5022,11 @@ static void ControllerSettingsList(void) {
       QueueSfx1_Max6(0x38);
       OptionsMenuControllerFunc_8();
     }
+  } else if (modern && (keys & (kButton_A | kButton_B | kButton_X | kButton_Y))) {
+    // A row of the modern scheme: the face button pressed goes there (a row that is fixed ignores it).
+    const int face = (keys & kButton_A) ? 0 : (keys & kButton_B) ? 1 : (keys & kButton_X) ? 2 : 3;
+    const bool took = g_rtl_controls_menu->assign && g_rtl_controls_menu->assign(g_rtl_ctl_cursor, face);
+    QueueSfx1_Max6(took ? 0x38 : 0x37);
   } else if (!modern && keys) {   // a button row of the original: the button pressed goes there
     QueueSfx1_Max6(0x38);
     menu_option_index = g_rtl_ctl_cursor;

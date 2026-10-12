@@ -191,13 +191,15 @@ static inline int RtlLanguageMenuRow(int i, int n) { return n <= 6 ? 6 + 3 * i :
 // CONTROLLER SETTING MODE shows CLASSIC / MODERN in a fixed row under the title (kRtlCtlHeadRow; left
 // and right switch it from any row) and under it a list of kRtlCtlShown rows that scrolls a row at a
 // time: with CLASSIC the game's 7 button rows, END and RESET TO DEFAULT (the game's own functions
-// assign, check and reset); with MODERN 11 rows with the modern scheme's buttons, dim and not
-// assignable, then END. The game's code moves g_rtl_ctl_cursor / g_rtl_ctl_top and the cursor
+// assign, check and reset); with MODERN 10 rows with the modern scheme's buttons, then END: a
+// face button pressed on a row that can be changed goes to `assign` (the frontend's table). The game's code moves g_rtl_ctl_cursor / g_rtl_ctl_top and the cursor
 // sprite; the rows are drawn by the port (source/game_text_screens.c) while g_rtl_controls_row_shown.
 // NULL: the game's own screen.
 typedef struct {
   bool (*modern)(void);
   void (*set_modern)(bool on);
+  // MODERN: row 0..9 of the list, button 0 A, 1 B, 2 X, 3 Y. False: that row does not take it.
+  bool (*assign)(int row, int face);
 } RtlControlsMenu;
 extern const RtlControlsMenu *g_rtl_controls_menu;
 extern bool g_rtl_controls_row_shown;

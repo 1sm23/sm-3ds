@@ -230,6 +230,21 @@ int main(int argc, char **argv) {
     TapTab(kOptions);
     Tap(239 + 5, 64 + 5);              // SPOILERS: off again
   }
+  {   // The CONTROLS window: both schemes, a row waiting for its button, then changed (P4.18).
+    TapTab(kOptions);
+    Tap(300, 45);                      // the "?" beside CONTROLS
+    Shot("controls window");
+    Tap(150 + 80 + 5, 30 + 5);         // the other tab
+    Shot("controls window, the other scheme");
+    Tap(40, 54 + 12 * 2 + 5);          // the RUN row
+    Shot("controls window, modern: RUN row waiting for its button");
+    BottomUi_ButtonCaptured(1);        // Y (pad bit 1): run on Y, morph on B, X-ray and grapple follow
+    Shot("controls window, modern: RUN on Y");
+    Tap(80 + 5, 30 + 5);               // RESET
+    Tap(150 + 5, 30 + 5);              // the original's tab
+    Shot("controls window, original");
+    Tap(160 + 80, 214 + 5);            // CLOSE
+  }
   TapTab(kStates);
   Shot("states");
   BottomUi_TouchDown(150, 160);      // drag the list up by 90 px

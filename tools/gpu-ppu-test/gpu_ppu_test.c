@@ -1274,6 +1274,26 @@ int main(int argc, char **argv) {
       const int raw_input = g_input;
       if (getenv("MODERN")) {
         ModernControls_Set(true);
+        // MODERN_MAP=B,A,Y,X: the faces of jump, run, shoot, morph; MODERN_WITH=shoot,run,morph: the
+        // actions the missile, X-ray and grapple ride on (docs/modern-controls.md, "Remapping").
+        static bool mapped;
+        if (!mapped) {
+          mapped = true;
+          char buf[64];
+          int i = 0;
+          snprintf(buf, sizeof(buf), "%s", getenv("MODERN_MAP") ? getenv("MODERN_MAP") : "");
+          for (char *t = strtok(buf, ","); t && i < kModernActions; t = strtok(NULL, ","), i++) {
+            ModernFace f;
+            if (ModernControls_FaceFromName(t, &f)) ModernControls_SetButton((ModernAction)i, f);
+          }
+          snprintf(buf, sizeof(buf), "%s", getenv("MODERN_WITH") ? getenv("MODERN_WITH") : "");
+          i = 0;
+          for (char *t = strtok(buf, ","); t && i < kModernWeapons; t = strtok(NULL, ","), i++) {
+            ModernAction act;
+            if (ModernControls_ActionFromName(t, &act))
+              ModernControls_SetWeaponButton((ModernWeapon)i, ModernControls_ButtonOf(act));
+          }
+        }
         g_input = ModernControls_Translate(raw_input);
       }
       char label[64];
