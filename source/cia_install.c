@@ -76,13 +76,3 @@ done:
   amExit();
   return ok;
 }
-
-bool CiaInstall_JumpToSelf(void) {
-  u64 title = 0;
-  FS_MediaType media = MEDIATYPE_SD;
-  u8 param[0x300] = { 0 };
-  u8 hmac[0x20] = { 0 };
-  if (!RunningTitle(&title, &media)) return false;
-  if (R_FAILED(APT_PrepareToDoApplicationJump(0, title, media))) return false;
-  return R_SUCCEEDED(APT_DoApplicationJump(param, sizeof(param), hmac));
-}

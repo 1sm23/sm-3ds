@@ -1516,3 +1516,8 @@ Audio off on the 2DS (2026-10-03, WIDE on) changes little: A923 shown 44.3 (46.5
   its own, because `config.ini` is rewritten whole by the UI and would drop an extra line. The viewer is a window (`MODAL_NOTES`) over any
   tab instead of living on one tab, so the prompt's button needs no tab switch; while it is up the prompt hides and its touches go to the
   viewer. The notes of a tag are written when the tag is made (one summary of the whole range, not one per commit), see CLAUDE.md.
+- 2026-10-12: `./build_3ds.sh --install` froze the console once (hard reset needed): `sm-exit.txt` ended at "quit requested", with
+  the install's `APT_DoApplicationJump` issued from the running loop, i.e. the system closing the game while the GPU was in use (the
+  same family as #20 and the HOME close). The relaunch now sets `aptSetChainloaderToSelf()` and quits through the normal teardown;
+  libctru jumps when the process exits. Two earlier installs the same day had worked, so it was a race; to check on the console
+  over several installs, with the 3D slider up and down. Nothing else in the install changed.
