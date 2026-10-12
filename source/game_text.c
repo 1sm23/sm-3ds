@@ -1,4 +1,5 @@
 #include "game_text.h"
+#include "modern_controls.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -77,6 +78,22 @@ static const char *const kModernLines[kMsgCount] = {
 };
 
 static bool g_modern_lines;
+// The face button the one A / B / X / Y letter of the box's modern line stands for (by what the
+// letter is in the default scheme: X is where the missile is, Y the grapple, B the X-ray or running),
+// so a remapped scheme reads right; -1 keeps the letters as written (the original's lines).
+static int g_line_face = -1;
+
+static int ModernLineFace(int index) {
+  if (!g_modern_lines || !kModernLines[index]) return -1;
+  switch (index) {
+  case 2: case 3: case 4: return ModernControls_WeaponButton(kModernMissile);
+  case 5: return ModernControls_WeaponButton(kModernGrapple);
+  case 6: return ModernControls_WeaponButton(kModernXray);
+  case 13: return ModernControls_ButtonOf(kModernRun);
+  default: return -1;
+  }
+}
+
 void GameText_SetModernLines(bool on) { g_modern_lines = on; }
 
 static const char *BoxText(int index, const char *what) {
@@ -478,7 +495,8 @@ static int ParseLine(const char *format, LinePart *parts, int max, int blocks) {
       next_block++;
     }
     for (size_t k = 0; k < sizeof(kButtonCells) / sizeof(kButtonCells[0]) && n > 0; k++)
-      if ((int)strlen(kButtonCells[k].name) == n && !memcmp(open + 1, kButtonCells[k].name, n)) p->cell = kButtonCells[k].cell;
+      if ((int)strlen(kButtonCells[k].name) == n && !memcmp(open + 1, kButtonCells[k].name, n))
+        p->cell = g_line_face >= 0 && k < 4 ? kButtonCells[g_line_face].cell : kButtonCells[k].cell;   // A B X Y are the first four
     s = close + 1;
   }
   return np;
@@ -584,7 +602,9 @@ static void Build(Box *b, const MsgText *m, int index) {
     TitleRow(b, 1 + r, m->row[r], index == 23 || index == 28);
   }
   if (m->yes && b->rows >= 4) ChoicesRow(b, 4, m->yes, m->no);
+  g_line_face = ModernLineFace(index);
   if (m->instr && b->rows >= 4) InstructionRow(b, 4, m->instr);
+  g_line_face = -1;
 }
 
 // The box is in VRAM in English (from the game's own buffer): translate it.

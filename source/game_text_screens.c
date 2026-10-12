@@ -12,6 +12,7 @@
 // restores the game's VRAM exactly.
 
 #include "game_text.h"
+#include "modern_controls.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -886,12 +887,19 @@ static void ControllerList(const TextLayer *big) {
     for (int x = 0; x < 32; x++)
       Want((uint16_t)(big->map + r * 32 + x), (uint16_t)((Cell(big, r, x) & 0xfc00 & ~kPalMask) | big->font->fill));
   static const char *const kClassic[7] = { "SHOT", "JUMP", "DASH", "ITEM SELECT", "ITEM CANCEL", "ANGLE UP", "ANGLE DOWN" };
-  // The modern scheme: the label (an [options] key) and its buttons, a second one after a "+".
-  static const struct { const char *en; int8_t b1, b2; } kModern[10] = {
-    { "JUMP", kBtnA, -1 }, { "DASH", kBtnB, -1 }, { "SHOT / BOMB", kBtnX, -1 },
-    { "MORPH BALL", kBtnY, -1 }, { "AIM", kBtnL, kBtnUpDown }, { "MISSILE", kBtnR, kBtnX },
-    { "POWER BOMB", kBtnR, kBtnX }, { "GRAPPLING BEAM", kBtnR, kBtnY }, { "X-RAY SCOPE", kBtnR, kBtnB },
-    { "MISSILE / SUPER", kBtnSelect, -1 },
+  // The modern scheme: the label (an [options] key) and its buttons (the frontend's table), a second
+  // one after a "+". Rows the buttons can be changed on are bright, the others dim.
+  static const int8_t kFaceIcon[kFaceButtons] = { kBtnA, kBtnB, kBtnX, kBtnY };
+  const int8_t jump = kFaceIcon[ModernControls_ButtonOf(kModernJump)], run = kFaceIcon[ModernControls_ButtonOf(kModernRun)];
+  const int8_t shoot = kFaceIcon[ModernControls_ButtonOf(kModernShoot)], morph = kFaceIcon[ModernControls_ButtonOf(kModernMorph)];
+  const int8_t missile = kFaceIcon[ModernControls_WeaponButton(kModernMissile)];
+  const int8_t grapple = kFaceIcon[ModernControls_WeaponButton(kModernGrapple)];
+  const int8_t xray = kFaceIcon[ModernControls_WeaponButton(kModernXray)];
+  const struct { const char *en; int8_t b1, b2; bool edit; } kModern[10] = {
+    { "JUMP", jump, -1, true }, { "DASH", run, -1, true }, { "SHOT / BOMB", shoot, -1, true },
+    { "MORPH BALL", morph, -1, true }, { "AIM", kBtnL, kBtnUpDown, false }, { "MISSILE", kBtnR, missile, true },
+    { "POWER BOMB", kBtnR, missile, false }, { "GRAPPLING BEAM", kBtnR, grapple, true }, { "X-RAY SCOPE", kBtnR, xray, true },
+    { "MISSILE / SUPER", kBtnSelect, -1, false },
   };
   // The scheme: the left-right D-pad, then both names, the chosen one bright.
   CtlIcon(big, kRtlCtlHeadRow, kCtlLabelCol, kBtnLeftRight, false);
@@ -904,12 +912,13 @@ static void ControllerList(const TextLayer *big) {
       CtlIcon(big, row, kCtlIconCol, RtlCtlBinding(i), false);
     } else if (modern && i < 10) {
       const int k = i;
-      PutText(big, row, kCtlLabelCol, OptionsText(kModern[k].en), kPalDim);
+      const bool dim = !kModern[k].edit;
+      PutText(big, row, kCtlLabelCol, OptionsText(kModern[k].en), dim ? kPalDim : kPalBright);
       int col = kCtlIconCol;
-      col += CtlIcon(big, row, col, kModern[k].b1, true);
+      col += CtlIcon(big, row, col, kModern[k].b1, dim);
       if (kModern[k].b2 >= 0) {
-        CtlPlus(big, row, col++, true);
-        CtlIcon(big, row, col, kModern[k].b2, true);
+        CtlPlus(big, row, col++, dim);
+        CtlIcon(big, row, col, kModern[k].b2, dim);
       }
     } else {
       const bool reset = !modern && i == n - 1;

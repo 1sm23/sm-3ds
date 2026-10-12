@@ -84,6 +84,12 @@ int BottomUi_HudHidden(void);
 // card): shows PLEASE WAIT on the bottom screen at once, since nothing draws until it is done.
 void BottomUi_Busy(void);
 
+// A CONTROLS row (OPTIONS -> "?") waits for its new button: the main loop gives the press to
+// BottomUi_ButtonCaptured (the frontend's pad bit, B Y SELECT START Up Down Left Right A X L R
+// from bit 0, or -1 for a button that is not a game button) and the game does not see it.
+bool BottomUi_CapturingButton(void);
+void BottomUi_ButtonCaptured(int pad_bit);
+
 void BottomUi_TouchDown(int x, int y);
 void BottomUi_TouchMove(int x, int y);
 void BottomUi_TouchUp(void);
