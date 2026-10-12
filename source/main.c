@@ -814,9 +814,12 @@ int main(int argc, char** argv) {
       }
     }
 #endif
-    if (FtpServer_TakeRelaunch()) {   // SITE INSTALL put a new build in place: jump into it, as the updater's restart does
+    if (FtpServer_TakeRelaunch()) {   // SITE INSTALL put a new build in place: close as usual and let the system start it
+      // The chainloader is run by libctru when the process exits (aptExit), after the whole teardown below. Jumping at
+      // once (APT_DoApplicationJump) had the system close the game under its feet while the GPU was still in use, and
+      // the console froze (2026-10-12).
       ExitStep("relaunching into the build just installed");
-      if (!CiaInstall_JumpToSelf()) ExitStep("the jump into the new build was refused");
+      aptSetChainloaderToSelf();
       g_quit_request = true;
     }
     {
