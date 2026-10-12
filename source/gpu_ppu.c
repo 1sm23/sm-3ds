@@ -1155,7 +1155,7 @@ static const uint8_t kBgLevel[3][2] = { { 8, 12 }, { 7, 11 }, { 1, 15 } };
 static uint32_t g_composed[3][kPpuCaptureLines];   // frame number each screen-texture row was composed in
 
 // One BG layer over the band's lines [l0, l1] (output rows l0-1 .. l1-1).
-static const char *EmitBg(const Ppu *ppu, const PpuLineCapture *cap, int layer, int l0, int l1, bool math, int scr) {
+static const char *EmitBgQuads(const Ppu *ppu, const PpuLineCapture *cap, int layer, int l0, int l1, bool math, int scr) {
   Surface *s = GetSurface(&cap->line[l0].bgLayer[layer], layer < 2 ? 4 : 2);
   if (!s) return "out of texture memory";
   SyncSurface(s, ppu, layer);
@@ -1248,6 +1248,23 @@ static const char *EmitBg(const Ppu *ppu, const PpuLineCapture *cap, int layer, 
       return "too many quads";
   }
   g_quad_plane = 0;
+  return NULL;
+}
+
+// EmitBgQuads, then a message box's quads (this BG3 is one: g_msgbox) to the HUD list: it is moved
+// to the HUD's place, and the masks over a room's outer margins (a room narrower than the view)
+// would cut it where they sit, as they cut the room.
+static const char *EmitBg(const Ppu *ppu, const PpuLineCapture *cap, int layer, int l0, int l1, bool math, int scr) {
+  const int first = g_out->quad_count;
+  const char *err = EmitBgQuads(ppu, cap, layer, l0, l1, math, scr);
+  const int n = g_out->quad_count - first;
+  if (err || !g_msgbox || g_force_narrow || !NarrowBg3(cap, l0, l1) || g_hud_quad_count + n > kMaxHudQuads) return err;
+  for (int q = first; q < g_out->quad_count; q++) {
+    GpuQuad qd = g_out->quads[q];
+    qd.flags &= ~kGpuQuadMath;
+    g_hud_quads[g_hud_quad_count++] = qd;
+  }
+  g_out->quad_count = first;
   return NULL;
 }
 
