@@ -69,16 +69,29 @@ writes them). An FTP server left on starts again by itself, retrying every ~2 s 
 up (the cell says `WAITING FOR WI-FI`; tapping its button cancels it). The recorders, GPU
 CHECK and the like are one-shot and start off.
 
-- Anonymous: any user name and password. `/` is the root of the SD card; the game's files are
-  in `/3ds/Super Metroid 3DS/` (`debug/`, `saves/`, `config.ini`).
+- Login `sm3ds` / the password in `source/ftp_credentials.h` (CLAUDE.md has it too); a wrong one
+  costs a second. `/` is the root of the SD card; the game's files are in
+  `/3ds/Super Metroid 3DS/` (`debug/`, `saves/`, `config.ini`).
 - Passive mode only (PASV and EPSV, data ports 5001-5064), one client at a time. FileZilla,
   WinSCP, lftp and curl work:
 
 ```sh
-curl ftp://<3ds-ip>:5000/3ds/Super%20Metroid%203DS/debug/                  # list
-curl -O ftp://<3ds-ip>:5000/3ds/Super%20Metroid%203DS/debug/sm-perf-00.csv   # fetch
-wget -r -nH --cut-dirs=3 ftp://<3ds-ip>:5000/3ds/Super%20Metroid%203DS/debug/
+curl -u sm3ds:PASSWORD ftp://<3ds-ip>:5000/3ds/Super%20Metroid%203DS/debug/                  # list
+curl -u sm3ds:PASSWORD -O ftp://<3ds-ip>:5000/3ds/Super%20Metroid%203DS/debug/sm-perf-00.csv   # fetch
+wget -r -nH --cut-dirs=3 --user=sm3ds --password=PASSWORD ftp://<3ds-ip>:5000/3ds/Super%20Metroid%203DS/debug/
 ```
+
+**Install-only server in a production build.** A build without DEBUG_TOOLS has no tools window, so
+a new build could only be installed with FBI. If `dev-ftp.txt` (any content, empty is fine) is in
+`/3ds/Super Metroid 3DS/`, a production build starts a reduced server at boot, as soon as Wi-Fi is up:
+same login, but only `/3ds/Super Metroid 3DS/update/` can be listed, read or written (any other
+path answers `550 Not allowed.`), and the remote control (`SITE` but INSTALL) is off. So
+`./build_3ds.sh --install <ip>` works on it as it does on a debug build, with the debug build
+installed over it. The bottom screen shows `FTP (INSTALL ONLY)`, the address and a CANCEL button
+over every tab: CANCEL stops the server for the rest of the session (leave the game and open it
+again to get it back). Create the file once, while a debug build still has its FTP on:
+`curl -u sm3ds:PASSWORD -T /dev/null ftp://<ip>:5000/3ds/Super%20Metroid%203DS/dev-ftp.txt`.
+Nothing about it is shown to a player or listed in the release notes. Delete the file to turn it off.
 
 Its thread runs on core 1 (the audio thread's) below the game's priority and sleeps on the
 network, so it costs nothing while idle; a transfer competes with the game for the SD card. It

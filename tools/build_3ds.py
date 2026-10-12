@@ -316,7 +316,7 @@ def run_build(debug=True, send_ftp=False, ftp_host="", ftp_port=5000, clean=Fals
         # the CIA over itself and relaunches into it.
         from urllib.parse import quote
         steps.append((f"Sending to {ftp_host}:{ftp_port} and installing in the running game",
-                      ["curl", "--max-time", "300", "--ftp-create-dirs", "-T", CIA_PATH,
+                      ["curl", "--max-time", "300", "--ftp-create-dirs", "--user", ftp_login(), "-T", CIA_PATH,
                        f"ftp://{ftp_host}:{ftp_port}{quote(INSTALL_SD_PATH)}",
                        "-Q", f"-SITE INSTALL {INSTALL_SD_PATH}"]))
 
@@ -375,6 +375,12 @@ def local_ipv4():
         return None
     finally:
         s.close()
+
+
+def ftp_login():
+    """user:password of the game's own FTP server (source/ftp_credentials.h)."""
+    text = open(os.path.join(ROOT, "source", "ftp_credentials.h")).read()
+    return ":".join(re.search(r'#define FTP_%s "([^"]*)"' % k, text).group(1) for k in ("USER", "PASS"))
 
 
 def probe_ftp(host, port, timeout=0.4):

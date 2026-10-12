@@ -803,6 +803,13 @@ Audio off on the 2DS (2026-10-03, WIDE on) changes little: A923 shown 44.3 (46.5
 
 ## Decisions log
 
+- 2026-10-12: Production builds can start an install-only FTP server, off unless `dev-ftp.txt` is in the data folder. A
+  production install has no tools window, so a new build needed FBI every time. A file marker was chosen over a hidden
+  gesture: no UI, no trace for a player, and the data folder survives installs, so it is created once (over FTP, while a
+  debug build is on). Only `/3ds/Super Metroid 3DS/update/` is reachable and every `SITE` but INSTALL is off; the bottom
+  screen shows the address with a CANCEL that stops it until the game is reopened. Debug and production both log in with
+  `sm3ds` and the password in `source/ftp_credentials.h` (CLAUDE.md): a deterrent, not a secret, as it ships in the
+  repository. The STATUS clock repaints itself in place, so it skips that while the strip is up. Not in the release notes.
 - 2026-10-12: The game's save (`saves/sm.srm`) is written by a worker thread (`source/sram_writer.c`). On the 2DS the
   rename + create + write + close took ~120 ms in the middle of the save station's animation (the fps counter fell to 25-30).
   `RtlWriteSram` now copies the 8 KB and returns; the SRAM in memory is what the game reads, so nothing waits for the file. The

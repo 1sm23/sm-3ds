@@ -33,6 +33,7 @@ Symbols come from the ELF in build/ through arm-none-eabi-nm.
 import ftplib
 import io
 import os
+import re
 import shlex
 import struct
 import subprocess
@@ -45,6 +46,13 @@ ELF = None   # found on demand: the .elf make leaves in build/ or output/
 NM = '/opt/devkitpro/devkitARM/bin/arm-none-eabi-nm'
 DATA = '/3ds/Super Metroid 3DS'
 PORT = 5000
+
+
+def credentials():
+    """The in-game FTP server's login, from source/ftp_credentials.h."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    text = open(os.path.join(here, '..', '..', 'source', 'ftp_credentials.h')).read()
+    return tuple(re.search(r'#define FTP_%s "([^"]*)"' % k, text).group(1) for k in ('USER', 'PASS'))
 
 
 class LinkError(Exception):
@@ -61,7 +69,7 @@ class Link:
         if self.ftp is None:
             ftp = ftplib.FTP()
             ftp.connect(self.ip, PORT, timeout=timeout)
-            ftp.login()
+            ftp.login(*credentials())
             self.ftp = ftp
         return self.ftp
 

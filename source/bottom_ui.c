@@ -16,9 +16,7 @@
 #include "modern_controls.h"
 #include "auto_bomb.h"
 #include "debug_tools.h"
-#if DEBUG_TOOLS
 #include "ftp_server.h"
-#endif
 #include "scene_rec.h"
 #include "sm_map.h"
 #include "sm_warp.h"
@@ -92,11 +90,28 @@ void BottomUi_Toast(const char *msg) {
 // A message that holds the bottom of the screen for as long as it lasts: a build arriving over the
 // debug FTP server and its install (ftp_server.h). A literal, so a change is a pointer change.
 static const char *StandingNotice(void) {
-#if DEBUG_TOOLS
   return FtpServer_Notice();
-#else
-  return NULL;
-#endif
+}
+
+// The install-only FTP server of a production build (dev-ftp.txt): its address and a CANCEL that
+// stops it until the game is opened again. Over every tab and window; only that button is live.
+static Rect DevFtpCancelRect(void) {
+  const Rect r = { SCREEN_W - 84, SCREEN_H - 36, 76, 28 };
+  return r;
+}
+
+static void DrawDevFtp(Surface s) {
+  if (!FtpServer_InstallOnly()) return;
+  char address[48];
+  FtpServer_Address(address, sizeof(address));
+  UiFillRect(s, 0, SCREEN_H - 40, SCREEN_W, 40, RGB(10, 14, 24));
+  UiFillRect(s, 0, SCREEN_H - 40, SCREEN_W, 1, RGB(245, 175, 45));
+  UiDrawText(s, 8, SCREEN_H - 34, 1, COL_TITLE, "FTP (INSTALL ONLY)");
+  UiDrawText(s, 8, SCREEN_H - 18, 1, RGB(190, 210, 240), address);
+  const Rect c = DevFtpCancelRect();
+  UiFillRect(s, c.x, c.y, c.w, c.h, RGB(120, 150, 210));
+  UiFillRect(s, c.x + 1, c.y + 1, c.w - 2, c.h - 2, RGB(30, 40, 70));
+  UiDrawTextCentered(s, c.x + c.w / 2, c.y + 10, COL_TITLE, "CANCEL");
 }
 
 // The standing notice as a box in the middle of the screen, laid out like mzm's (a "!" badge, a gold
@@ -2942,6 +2957,10 @@ static void SelectTab(Tab t) {
 }
 
 static void TouchDownImpl(int x, int y) {
+  if (FtpServer_InstallOnly() && UiIn(DevFtpCancelRect(), x, y)) {
+    FtpServer_Cancel();
+    return;
+  }
   Tab tabs[TAB_COUNT];
   const int n = VisibleTabs(tabs);
   if (g_modal == MODAL_NOTES && Updater_Prompt() != UPD_PROMPT_NONE) {   // opened from the prompt: it steps aside
@@ -3082,6 +3101,7 @@ static void DrawBottom(const UiPerf *p) {
     UiDrawText(s, g_tab == TAB_MAP ? 4 : 8, y, 1, COL_WARN, g_toast);
   }
   DrawStandingNotice(s);
+  DrawDevFtp(s);
   DrawUnlockNotice(s);
 }
 
@@ -3174,6 +3194,8 @@ static void TabBlinkUpdate(void) {
 }
 
 static void LiveUpdate(const UiPerf *p) {
+  // The install-only FTP strip covers the bottom rows: a partial redraw would paint over it.
+  if (FtpServer_InstallOnly()) return;
   Surface s = UiDraw_Screen(GFX_BOTTOM);
   if (g_tab == TAB_STATUS && GameTimeKey() != g_time_drawn) {
     DrawStatusTime(s);
@@ -3211,9 +3233,12 @@ bool BottomUi_Frame(const UiPerf *p) {
   const char *why = NULL;   // what asked for a redraw this frame, for the debug log
   {
     static const char *notice_seen;
+    static bool dev_ftp_seen;
     const char *notice = StandingNotice();
-    if (notice != notice_seen) {
+    const bool dev_ftp = FtpServer_InstallOnly();
+    if (notice != notice_seen || dev_ftp != dev_ftp_seen) {
       notice_seen = notice;
+      dev_ftp_seen = dev_ftp;
       g_dirty = 2;
       why = "standing notice changed";
     }
