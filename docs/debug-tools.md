@@ -93,9 +93,21 @@ again to get it back). Create the file once, while a debug build still has its F
 `curl -u sm3ds:PASSWORD -T /dev/null ftp://<ip>:5000/3ds/Super%20Metroid%203DS/dev-ftp.txt`.
 Nothing about it is shown to a player or listed in the release notes. Delete the file to turn it off.
 
-Its thread runs on core 1 (the audio thread's) below the game's priority and sleeps on the
-network, so it costs nothing while idle; a transfer competes with the game for the SD card. It
-shares the socket service with the updater (`net_service.c`). Transfers are written to the SD log.
+Its thread runs on core 1 (the audio thread's) below the game's priority and naps 10 ms between
+polls that do not wait, so it costs next to nothing while idle; a transfer competes with the game
+for the SD card. It shares the socket service with the updater and RetroAchievements
+(`net_service.c`): libctru sends every socket call of the process through one SOC session, so the
+server never blocks inside it (no waiting poll, sends of at most 8 KB), or their downloads would
+crawl while it runs. Transfers are written to the SD log.
+
+Stopping it waits up to 3 s for the server thread (a remote-control request waiting for the game
+gives up at once). A thread that does not end is left running, with the network service under it
+(the cell says `STUCK, RESTART THE GAME` and no server starts until the game is restarted): freeing
+them froze the game. The SD log (LOG TO SD; these lines are flushed at once, buffered or not)
+records each stop (`ftp stop: server thread <what it was doing>`, `ftp stop: done`, or
+`ftp stop: thread did not end in 3 s (...), left running`) and a thread busy in one command for
+30 s (`WATCHDOG: ftp server thread busy: command RETR for 30.0 s`; a SITE command is named by its
+sub-command, `command PEEK`).
 
 ### Installing a build over FTP
 
