@@ -12,6 +12,7 @@
 
 #include "bottom_ui.h"
 #include "debug_tools.h"
+#include "ftp_server.h"
 #include "states_store.h"
 
 // The main loop hands over what is on the top screen (a 400x240 column-major 0xRRGGBBAA image,
@@ -27,6 +28,7 @@ enum {
 
 // A request the main thread never takes (game hung or paused with the window closed).
 #define LINK_WAIT_NS 20000000000LL
+#define LINK_WAIT_SLICE_NS 50000000LL
 
 typedef enum {
   OP_NONE, OP_TOUCH, OP_SHOT, OP_STATE_SAVE, OP_STATE_LOAD, OP_STATE_DELETE, OP_STATES, OP_DUMP, OP_SWITCH,
@@ -119,7 +121,16 @@ static void RunOnMainThread(LinkOp op, char *reply, unsigned cap) {
   LightEvent_Clear(&g_done);
   g_result[0] = 0;
   __atomic_store_n(&g_op, op, __ATOMIC_RELEASE);
-  if (LightEvent_WaitTimeout(&g_done, LINK_WAIT_NS) != 0) {
+  // In slices, giving up as soon as the server stops: FtpServer_Stop runs on the main thread,
+  // so a request waiting for it could only time out, long after the stop's 3 s join.
+  bool done = false;
+  for (long long waited = 0; waited < LINK_WAIT_NS && FtpServer_Running(); waited += LINK_WAIT_SLICE_NS) {
+    if (LightEvent_WaitTimeout(&g_done, LINK_WAIT_SLICE_NS) == 0) {
+      done = true;
+      break;
+    }
+  }
+  if (!done) {
     __atomic_store_n(&g_op, OP_NONE, __ATOMIC_RELEASE);
     snprintf(reply, cap, "451 The game did not take the request (stopped?).");
   } else {

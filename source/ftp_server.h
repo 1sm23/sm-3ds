@@ -17,8 +17,9 @@
 //
 // Other SITE commands are the remote control, debug_link.h.
 //
-// Its thread runs at a lower priority than the game and blocks on the network, so it costs
-// nothing while idle.
+// Its thread runs at a lower priority than the game and naps 10 ms between polls that do not
+// wait (a waiting one holds up every other thread's socket calls, which share one SOC session),
+// so it costs next to nothing while idle.
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -32,6 +33,9 @@ bool FtpServer_Start(void);
 bool FtpServer_StartInstallOnly(void);
 bool FtpServer_InstallOnly(void);   // serving in that mode right now
 void FtpServer_Cancel(void);
+// Waits up to 3 s for the server thread. One that does not end is left running, with the network
+// service under it: the address reads "STUCK, RESTART THE GAME" and no server starts again until
+// the game restarts.
 void FtpServer_Stop(void);
 bool FtpServer_Running(void);
 // "192.168.1.50:5000", or a short reason when it is not serving.
@@ -41,7 +45,8 @@ void FtpServer_Stats(unsigned *sent, unsigned *received, bool *connected);
 // While a .cia is being received or SITE INSTALL runs, the line to show the player (the
 // bottom screen's toast); NULL otherwise.
 const char *FtpServer_Notice(void);
-// Main thread, once per frame: writes what the server thread has to say into the SD log.
+// Main thread, once per frame: writes what the server thread has to say into the SD log, and
+// notes once when the thread has been inside one command for 30 s.
 void FtpServer_Tick(void);
 // True once, after a SITE INSTALL succeeded: the main loop jumps into the new build.
 bool FtpServer_TakeRelaunch(void);
