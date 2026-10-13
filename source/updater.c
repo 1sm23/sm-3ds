@@ -435,7 +435,9 @@ static bool DoCheck(void) {
 
     EnsureLock();
     LightLock_Lock(&sTextLock);
-    snprintf(sRemoteTag, sizeof(sRemoteTag), "%s", rel.tag);
+    /* Shown as is (OPTIONS, the prompt, WHAT'S NEW): a pre-release says it is one, as this
+     * build's label does. */
+    snprintf(sRemoteTag, sizeof(sRemoteTag), "%s%s", rel.tag, rel.prerelease ? " BETA" : "");
     LightLock_Unlock(&sTextLock);
     SaveNotesCache();
 
