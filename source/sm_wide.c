@@ -66,6 +66,13 @@ static bool Mode7Room(void) { return irq_enable_mode7 && (reg_BGMODE_fake & 7) =
 // showing the plane's backdrop in the margins for a second.
 enum { kRoom_CeresRidley = 0xE0B5 };
 
+// The title's mode 7 scenes (the zooms into the laboratory before the logo, and the picture itself): not a
+// room, but a plane the margins can show, with nothing the game keeps up to date there, so they take the
+// mode 7 path of a room (no room masks). Mode 7 only: the other pages of the cinematic stay 4:3.
+bool SmWide_TitleMode7(void) {
+  return game_state == kGameState_1_OpeningCinematic && (reg_BGMODE & 7) == 7;
+}
+
 static inline int FloorDiv16(int v) { return v >> 4; }   // arithmetic shift: floor
 
 static inline void VramPut(Ppu *ppu, uint16_t adr, uint16_t v) {
@@ -476,7 +483,8 @@ static void BeforePpuDraw(void) {
   if (door && !shown) LeanDoor();
   // A mode 7 room: the plane holds the whole room (outside it, transparent), so nothing is
   // filled or masked; only the HUD's blank cells let it show under the HUD.
-  g_mode7 = RoomShown() && Mode7Room();
+  const bool title7 = SmWide_TitleMode7();
+  g_mode7 = (RoomShown() && Mode7Room()) || title7;
   if (g_mode7) {
     g_in_door = false;
     if (room_ptr == kRoom_CeresRidley) {   // framed as in the rest of the fight
@@ -488,7 +496,7 @@ static void BeforePpuDraw(void) {
     }
     g_bg2_dx = 0;
     PublishView();
-    if (g_rtl_wide_hud_over_room) HudSeeThrough(ppu);
+    if (g_rtl_wide_hud_over_room && !title7) HudSeeThrough(ppu);
     return;
   }
   if (!shown) {

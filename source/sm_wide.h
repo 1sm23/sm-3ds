@@ -20,6 +20,10 @@
 // on the top screen: what the bottom screen's tab shows instead. Called every frame; both false =
 // the HUD as the game draws it (and the game untouched). Only VRAM changes.
 void SmWide_HideHud(bool status, bool map);
+
+// The title's mode 7 scenes are on screen (game state 1 with BG mode 7, reg_BGMODE): the view is widened there too, with
+// the plane in the margins (and nothing where the plane ends).
+bool SmWide_TitleMode7(void);
 void SmWide_SetView(int margin_x, int extra_top, int extra_bottom, bool hud_over_room);
 
 // The last frame's margins: 2 * margin_x in all, but leaning away from a room edge that

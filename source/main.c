@@ -229,7 +229,7 @@ static bool GameplayView(void) {
 }
 
 static int WideMargin(void) {
-  if (!g_ui.wide || !GameplayView()) return 0;
+  if (!g_ui.wide || !(GameplayView() || SmWide_TitleMode7())) return 0;
   return g_ui.pixel_perfect ? 72 : 60;
 }
 
