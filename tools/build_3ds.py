@@ -318,7 +318,8 @@ def run_build(debug=True, send_ftp=False, ftp_host="", ftp_port=5000, clean=Fals
         steps.append((f"Sending to {ftp_host}:{ftp_port} and installing in the running game",
                       ["curl", "--max-time", "300", "--ftp-create-dirs", "--user", ftp_login(), "-T", CIA_PATH,
                        f"ftp://{ftp_host}:{ftp_port}{quote(INSTALL_SD_PATH)}",
-                       "-Q", f"-SITE INSTALL {INSTALL_SD_PATH}"]))
+                       # "+" = before the transfer: the game's progress bar needs the size.
+                       "-Q", f"+ALLO {os.path.getsize(CIA_PATH)}", "-Q", f"-SITE INSTALL {INSTALL_SD_PATH}"]))
 
     output = ""
     for n, (label, cmd) in enumerate(steps, 1):

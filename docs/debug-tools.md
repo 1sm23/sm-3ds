@@ -116,7 +116,7 @@ running game and relaunches into the new build (the FTP server comes back on wit
 `./build_3ds.sh --install IP` builds, uploads to `/3ds/Super Metroid 3DS/update/dev.cia` and
 installs in one go; the interactive menu offers it as "Install into the running game". Any
 unsaved progress is lost. While a `.cia` is received and while it installs, the bottom screen
-says so on any tab, in a box in the middle (`NEW BUILD`: `RECEIVING THE INSTALLER...`, then `INSTALLING - THE GAME WILL RESTART`).
+says so on any tab, in a box in the middle (`NEW BUILD`: `RECEIVING THE INSTALLER 42%`, then `INSTALLING 80%`, then `RESTARTING IN 7 S`: a bar under each, and the game relaunches 10 s after the install). The percentages need the client to announce the size with `ALLO` before the upload (`build_3ds.sh --install` does; with plain curl add `-Q "+ALLO <bytes>"`); without it the box says `...` and shows no bar.
 A CIA of another title is refused. The first build with this feature has to arrive by FBI or
 ftpd as before: there is no server to talk to until it runs once.
 
