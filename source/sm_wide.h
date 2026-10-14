@@ -25,6 +25,9 @@ void SmWide_HideHud(bool status, bool map);
 // the plane in the margins (and nothing where the plane ends).
 bool SmWide_TitleMode7(void);
 
+// ... and its picture is on whole and 1:1: the margins are the generated art's (scene_art.h).
+bool SmWide_TitleArt(void);
+
 // Draygon's fight: the screen columns and output rows her body's picture (BG2) is in, so that the copy the tilemap's wrap
 // shows above or below it, or beside it in the WIDE margins, is not drawn. False in any other case (no clip).
 bool SmWide_Bg2Clip(int *x0, int *x1, int *y0, int *y1);

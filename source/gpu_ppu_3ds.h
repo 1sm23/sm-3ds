@@ -24,6 +24,12 @@ void GpuPpu3ds_SetOverlay(const uint32_t *px, int corner);
 // its top-left corner (BottomUi_DrawTopToastInto), drawn centred at the top; NULL hides it.
 void GpuPpu3ds_SetToast(const uint32_t *px);
 
+// Generated art for a non-gameplay screen's margins (scene_art.h): 400x240 RGBA5551, rows from the top, the game's own
+// rectangle (72, 8, 256x224) not read. Loaded once; ShowSceneArt per frame (PIXEL PERFECT with the 72 px margins only).
+void GpuPpu3ds_SetSceneArt(const uint16_t *rgba5551);
+bool GpuPpu3ds_SceneArtLoaded(void);
+void GpuPpu3ds_ShowSceneArt(bool on);
+
 // Timing of the last DrawAndPresent: waiting for the GPU to finish the frame before, and
 // building plus submitting the command list.
 void GpuPpu3ds_LastTimes(float *wait_ms, float *submit_ms);

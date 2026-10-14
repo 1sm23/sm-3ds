@@ -45,6 +45,7 @@
 #include "build_config.h"
 #include "cia_install.h"
 #include "ftp_server.h"
+#include "scene_art.h"
 #if DEBUG_TOOLS
 #include "debug_link.h"
 #endif
@@ -997,6 +998,17 @@ int main(int argc, char** argv) {
         GpuPpu_SetHudY(hud_y);
         GpuPpu_SetSpritePriorityOrder(SmWide_Gameplay() && (osGet3DSliderState() > 0 || g_ui.force_3d));
         GpuPpu_SetLayerShiftX(1, bg2_dx);
+        {   // The title's picture whole: generated art in the margins (loaded the first time it is wanted)
+          static bool art_tried;
+          const bool art = wide > 0 && g_ui.pixel_perfect && SmWide_TitleArt();
+          if (art && !art_tried) {
+            static uint16_t px[kSceneArtPixels];
+            art_tried = true;
+            if (SceneArt_Read("title", px)) GpuPpu3ds_SetSceneArt(px);
+            else Debug_Log("scene art: no title art found");
+          }
+          GpuPpu3ds_ShowSceneArt(art);
+        }
         {   // Draygon's body: one copy of its picture (the tilemap repeats every 256 rows)
           int bx0, bx1, by0, by1;
           if (SmWide_Bg2Clip(&bx0, &bx1, &by0, &by1)) GpuPpu_SetLayerClip(1, bx0, bx1, by0, by1);

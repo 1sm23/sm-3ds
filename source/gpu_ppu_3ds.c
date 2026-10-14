@@ -857,6 +857,23 @@ void GpuPpu3ds_SetOverlay(const uint32_t *px, int corner) {
 // The achievement notice on the top screen: kToastW x kToastH like the overlay, its box in
 // the top-left kToastBoxW x kToastBoxH, drawn centred at the top of the screen.
 enum { kToastW = 512, kToastH = 64, kToastBoxW = 300, kToastBoxH = 36 };
+// Generated art around a non-gameplay picture (source/scene_art.c): a 400x240 RGBA5551 texture, the original's
+// rectangle left empty, drawn over the frame's margins and extra rows (not over the game's own pixels).
+enum { kArtW = 512, kArtH = 256, kArtCanvasW = 400, kArtCanvasH = 240, kArtX = 72, kArtY = 8, kArtPicW = 256, kArtPicH = 224 };
+static C3D_Tex g_art_tex;
+static bool g_art_loaded, g_art_on;
+
+void GpuPpu3ds_SetSceneArt(const uint16_t *rgba5551) {   // kArtCanvasW * kArtCanvasH texels, rows from the top
+  if (!g_ready || !rgba5551) return;
+  uint16_t *dst = (uint16_t *)g_art_tex.data;
+  for (int y = 0; y < kArtCanvasH; y++)
+    for (int x = 0; x < kArtCanvasW; x++) dst[GpuTexelIndex(x, y, kArtW)] = rgba5551[y * kArtCanvasW + x];
+  GSPGPU_FlushDataCache(dst, kArtW * kArtH * 2);
+  g_art_loaded = true;
+}
+bool GpuPpu3ds_SceneArtLoaded(void) { return g_art_loaded; }
+void GpuPpu3ds_ShowSceneArt(bool on) { g_art_on = on && g_art_loaded; }
+
 static C3D_Tex g_toast_tex;
 static bool g_toast_on;
 
@@ -957,6 +974,22 @@ static void DrawEye(const GpuFrame *f, bool pixel_perfect, C3D_RenderTarget *rt_
     const float y0 = y_off + b->y0 * y_scale, y1 = y_off + b->y1 * y_scale;
     BatchBegin();
     PushQuad(x0, y0, x1, y1, 0, u0, RtV(b->y0), u1, RtV(b->y1));
+    BatchDraw();
+  }
+  if (g_art_on && pixel_perfect && f->band_count > 0 && f->x0 == -kArtX) {
+    // Generated art over the margins and the extra rows, faded with the frame (the first band's brightness).
+    const int bright = f->bands[0].black ? 0 : f->bands[0].brightness * 255 / 15;
+    C3D_TexBind(0, &g_art_tex);
+    EnvModulate((uint32_t)bright | (uint32_t)bright << 8 | (uint32_t)bright << 16 | 0xff000000u);
+    const float tu = 1.0f / kArtW, tv = 1.0f / kArtH;
+    const struct { int x0, y0, x1, y1; } r[4] = {
+      { 0, 0, kArtX, kArtCanvasH }, { kArtX + kArtPicW, 0, kArtCanvasW, kArtCanvasH },
+      { kArtX, 0, kArtX + kArtPicW, kArtY }, { kArtX, kArtY + kArtPicH, kArtX + kArtPicW, kArtCanvasH },
+    };
+    BatchBegin();
+    for (int i = 0; i < 4; i++)
+      PushQuad((float)r[i].x0, (float)r[i].y0, (float)r[i].x1, (float)r[i].y1, 0, r[i].x0 * tu, 1.0f - r[i].y0 * tv,
+               r[i].x1 * tu, 1.0f - r[i].y1 * tv);
     BatchDraw();
   }
   // The port's own text, on the HUD's plane (screen pixels, whole like the planes').
@@ -1195,6 +1228,8 @@ bool GpuPpu3ds_Init(void) {
   C3D_TexSetFilter(&g_sub_tex, GPU_NEAREST, GPU_NEAREST);
   if (!C3D_TexInit(&g_overlay_tex, kOverlaySize, kOverlaySize, GPU_RGBA8)) return false;
   C3D_TexSetFilter(&g_overlay_tex, GPU_NEAREST, GPU_NEAREST);
+  if (!C3D_TexInit(&g_art_tex, kArtW, kArtH, GPU_RGBA5551)) return false;
+  C3D_TexSetFilter(&g_art_tex, GPU_NEAREST, GPU_NEAREST);
   if (!C3D_TexInit(&g_toast_tex, kToastW, kToastH, GPU_RGBA8)) return false;
   C3D_TexSetFilter(&g_toast_tex, GPU_NEAREST, GPU_NEAREST);
   g_rt_main = C3D_RenderTargetCreateFromTex(&g_main_tex, GPU_TEXFACE_2D, 0, GPU_RB_DEPTH24_STENCIL8);
@@ -1284,6 +1319,8 @@ static void TeardownThread(void *arg) {
   C3D_TexDelete(&g_sub_tex);
   C3D_TexDelete(&g_overlay_tex);
   C3D_TexDelete(&g_toast_tex);
+  C3D_TexDelete(&g_art_tex);
+  g_art_loaded = false;
   ExitStepLog("shader");
   shaderProgramFree(&g_prog);
   DVLB_Free(g_dvlb);

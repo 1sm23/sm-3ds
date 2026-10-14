@@ -74,6 +74,13 @@ bool SmWide_TitleMode7(void) {
   return game_state == kGameState_1_OpeningCinematic && (reg_BGMODE & 7) == 7;
 }
 
+// The title's picture whole, 1:1 (the zoom has ended): the plane's 256 columns are the screen's, and the margins
+// have nothing to show but generated art (source/scene_art.c).
+bool SmWide_TitleArt(void) {
+  return SmWide_TitleMode7() && reg_M7A == 0x100 && reg_M7D == 0x100 && reg_M7B == 0 && reg_M7C == 0 &&
+         reg_BG1HOFS == 0 && reg_BG1VOFS == 0;
+}
+
 static inline int FloorDiv16(int v) { return v >> 4; }   // arithmetic shift: floor
 
 static inline void VramPut(Ppu *ppu, uint16_t adr, uint16_t v) {
