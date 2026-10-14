@@ -25,6 +25,8 @@
  *     priority bits among sprites), but priority 3 put it on PLAY, nearer than both.
  *   0xDA60 BG2 -> OBJ: Draygon's body is BG2 (the boss moves BG2's scroll with her, sm_a5.c), which the depth function puts
  *     on FAR, behind the walls and a few pixels behind Samus; it goes to Samus's plane.
+ *   0xDA60 sprites of every priority -> OBJ: Draygon's tail is parts of different OAM priority; with the 3D on they were
+ *     drawn priority first, so a part that goes behind the next one (OAM order) was drawn in front of it.
  */
 
 SM_PLANE_FIX(0x9AD9, 1, 0, 0, 0x8044, 0xF, kStereoPlay)  /* -> PLAY */
@@ -3844,3 +3846,7 @@ SM_LAYER_PLANE(0xE0B5, 5, 0, kStereoBack)  /* -> BACK */
 SM_LAYER_PLANE(0x9DC7, 4, 3, kStereoObj)  /* -> OBJ */
 SM_LAYER_PLANE(0xDA60, 2, 0, kStereoObj)  /* -> OBJ */
 SM_LAYER_PLANE(0xDA60, 2, 1, kStereoObj)  /* -> OBJ */
+SM_LAYER_PLANE(0xDA60, 4, 0, kStereoObj)  /* -> OBJ */
+SM_LAYER_PLANE(0xDA60, 4, 1, kStereoObj)  /* -> OBJ */
+SM_LAYER_PLANE(0xDA60, 4, 2, kStereoObj)  /* -> OBJ */
+SM_LAYER_PLANE(0xDA60, 4, 3, kStereoObj)  /* -> OBJ */
