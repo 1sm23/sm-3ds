@@ -188,10 +188,10 @@ void GpuPpu_SetSpritePriorityOrder(bool on);
 // Added to a BG layer's horizontal scroll on every line of the next frames (0..2 = BG1..3).
 void GpuPpu_SetLayerShiftX(int layer, int dx);
 
-// Generated art for the title's mode 7 picture (400x240 CGRAM indices, rows from the top, 0 = nothing; its (72, 7) is
+// Generated art for the title's mode 7 picture (400x240 words, rows from the top: 0 = nothing, a CGRAM index, or 0x8000 | BGR555; its (72, 7) is
 // plane (0, 0)): drawn under the plane, with its matrix and palette, wherever the plane is empty. Set once; ShowSceneArt
 // per frame.
-bool GpuPpu_SetSceneArt(const uint8_t *idx);   // NULL: only asks whether it is set
+bool GpuPpu_SetSceneArt(const uint16_t *idx);   // NULL: only asks whether it is set
 void GpuPpu_ShowSceneArt(bool on);
 
 // A BG layer is drawn only in the screen columns [x0, x1) and output rows [y0, y1) of the next frames (0..2 = BG1..3;

@@ -1426,12 +1426,12 @@ static const char *EmitMode7Pass(const Ppu *ppu, const PpuLineCapture *cap, int 
 // plane's own matrix and fades. Kept as CGRAM indices and decoded with the plane's colour table, so a palette fade
 // or animation changes it as it changes the plane.
 static GpuTex g_art_tex;
-static uint8_t g_art_idx[400 * 240];
+static uint16_t g_art_idx[400 * 240];   // 0 nothing, 1..255 CGRAM index, 0x8000 | BGR555 fixed
 static uint16_t g_art_lut[256];
 static bool g_art_have, g_art_show, g_art_lut_ok;
 enum { kArtShift = 128, kArtX = 72, kArtY = 7 };   // the canvas' (0, 0) is plane (-72, -7): the picture's row 1 at 8
 
-bool GpuPpu_SetSceneArt(const uint8_t *idx) {   // 400x240 CGRAM indices, rows from the top; 0 = nothing
+bool GpuPpu_SetSceneArt(const uint16_t *idx) {   // 400x240 CGRAM indices, rows from the top; 0 = nothing
   if (!idx) return g_art_have;
   memcpy(g_art_idx, idx, sizeof(g_art_idx));
   g_art_have = true;
@@ -1449,7 +1449,11 @@ static bool ArtRefresh(void) {
   GpuBackend_BeforeTexWrite();
   for (int y = 0; y < 240; y++)
     for (int x = 0; x < 400; x++)
-      g_art_tex.px[GpuTexelIndex(x - kArtX + kArtShift, y - kArtY + kArtShift, 1024)] = g_lut_m7[g_art_idx[y * 400 + x]];
+    {
+      const uint16_t v = g_art_idx[y * 400 + x];
+      g_art_tex.px[GpuTexelIndex(x - kArtX + kArtShift, y - kArtY + kArtShift, 1024)] =
+          v & 0x8000 ? GpuRgba5551(v & 0x7fff) : g_lut_m7[v & 255];
+    }
   GpuBackend_TexWritten(&g_art_tex, kArtShift - kArtY, kArtShift - kArtY + 239);
   return true;
 }
