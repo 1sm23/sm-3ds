@@ -65,7 +65,7 @@ FBI and ftpd, so `./build_3ds.sh --ftp` and the usual client bookmarks work) and
 
 The tools come back at the next launch as they were left (`config.ini`: `debug_log`,
 `debug_log_direct`, `debug_ftp`; DEBUG_TOOLS builds only, a plain build neither reads nor
-writes them). An FTP server left on starts again by itself, retrying every ~2 s until Wi-Fi is
+writes them). Debug builds start it on the first run (like the log); an FTP server left on starts again by itself, retrying every ~2 s until Wi-Fi is
 up (the cell says `WAITING FOR WI-FI`; tapping its button cancels it). The recorders, GPU
 CHECK and the like are one-shot and start off.
 

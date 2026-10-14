@@ -71,7 +71,7 @@ static bool g_show_spoilers;
 static char g_toast[64];   // UTF-8
 // DEBUG_TOOLS builds, config.ini: the SD log (on by default there), its mode and the FTP server as
 // the DEBUG TOOLS left them.
-static int g_debug_log = 1, g_debug_log_direct, g_debug_ftp;
+static int g_debug_log = 1, g_debug_log_direct, g_debug_ftp = 1;
 static void SaveConfig(void);
 static u64 g_toast_until;
 static int g_tap_x = -1000, g_tap_y;
