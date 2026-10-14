@@ -1442,7 +1442,8 @@ void GpuPpu_ShowSceneArt(bool on) { g_art_show = on && g_art_tex.px; }
 
 static const char *EmitMode7Quads(const Ppu *ppu, const PpuLineCapture *cap, int l0, int l1, bool math, int scr) {
   if (g_art_show) {
-    const char *err = EmitMode7Pass(ppu, cap, l0, l1, math, scr, &g_art_tex, kArtShift, 4);
+    // No colour math: the art is the picture as it looks (the backdrop's gradient is left out of it, see to_console.py).
+    const char *err = EmitMode7Pass(ppu, cap, l0, l1, false, scr, &g_art_tex, kArtShift, 4);
     if (err) return err;
   }
   return EmitMode7Pass(ppu, cap, l0, l1, math, scr, &g_m7_tex, 0, 5);
