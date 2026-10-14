@@ -1423,27 +1423,40 @@ static const char *EmitMode7Pass(const Ppu *ppu, const PpuLineCapture *cap, int 
 
 // Generated art around the title's mode 7 picture (docs/wide-scene-extension.md): a 1024x1024 texture where texel
 // (x + 128, y + 128) is plane (x, y), so the art is under the plane wherever the plane is empty, zoomed or not, with the
-// plane's own matrix, fades and colour math.
+// plane's own matrix and fades. Kept as CGRAM indices and decoded with the plane's colour table, so a palette fade
+// or animation changes it as it changes the plane.
 static GpuTex g_art_tex;
-static bool g_art_show;
+static uint8_t g_art_idx[400 * 240];
+static uint16_t g_art_lut[256];
+static bool g_art_have, g_art_show, g_art_lut_ok;
 enum { kArtShift = 128, kArtX = 72, kArtY = 7 };   // the canvas' (0, 0) is plane (-72, -7): the picture's row 1 at 8
 
-bool GpuPpu_SetSceneArt(const uint16_t *px) {   // 400x240 RGBA5551, rows from the top; alpha 0 = nothing
-  if (!px) return g_art_tex.px != NULL;
+bool GpuPpu_SetSceneArt(const uint8_t *idx) {   // 400x240 CGRAM indices, rows from the top; 0 = nothing
+  if (!idx) return g_art_have;
+  memcpy(g_art_idx, idx, sizeof(g_art_idx));
+  g_art_have = true;
+  g_art_lut_ok = false;
+  return true;
+}
+void GpuPpu_ShowSceneArt(bool on) { g_art_show = on && g_art_have; }
+
+// Decoded again whenever the plane's colour table (g_lut_m7, rebuilt each frame) is not the one it was decoded with.
+static bool ArtRefresh(void) {
   if (!g_art_tex.px && !GpuBackend_TexCreate(&g_art_tex, 1024, 1024)) return false;
+  if (g_art_lut_ok && memcmp(g_art_lut, g_lut_m7, sizeof(g_art_lut)) == 0) return true;
+  memcpy(g_art_lut, g_lut_m7, sizeof(g_art_lut));
+  g_art_lut_ok = true;
   GpuBackend_BeforeTexWrite();
   for (int y = 0; y < 240; y++)
     for (int x = 0; x < 400; x++)
-      g_art_tex.px[GpuTexelIndex(x - kArtX + kArtShift, y - kArtY + kArtShift, 1024)] = px[y * 400 + x];
-  GpuBackend_TexWritten(&g_art_tex, 0, 1023);
+      g_art_tex.px[GpuTexelIndex(x - kArtX + kArtShift, y - kArtY + kArtShift, 1024)] = g_lut_m7[g_art_idx[y * 400 + x]];
+  GpuBackend_TexWritten(&g_art_tex, kArtShift - kArtY, kArtShift - kArtY + 239);
   return true;
 }
-void GpuPpu_ShowSceneArt(bool on) { g_art_show = on && g_art_tex.px; }
 
 static const char *EmitMode7Quads(const Ppu *ppu, const PpuLineCapture *cap, int l0, int l1, bool math, int scr) {
-  if (g_art_show) {
-    // No colour math: the art is the picture as it looks (the backdrop's gradient is left out of it, see to_console.py).
-    const char *err = EmitMode7Pass(ppu, cap, l0, l1, false, scr, &g_art_tex, kArtShift, 4);
+  if (g_art_show && ArtRefresh()) {
+    const char *err = EmitMode7Pass(ppu, cap, l0, l1, math, scr, &g_art_tex, kArtShift, 4);
     if (err) return err;
   }
   return EmitMode7Pass(ppu, cap, l0, l1, math, scr, &g_m7_tex, 0, 5);

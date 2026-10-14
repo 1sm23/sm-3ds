@@ -1002,7 +1002,7 @@ int main(int argc, char** argv) {
           static bool art_tried;
           const bool art = wide > 0 && SmWide_TitleArt();
           if (art && !art_tried) {
-            static uint16_t px[kSceneArtPixels];
+            static uint8_t px[kSceneArtPixels];
             art_tried = true;
             if (SceneArt_Read("title", px)) GpuPpu_SetSceneArt(px);
             else Debug_Log("scene art: no title art found");
