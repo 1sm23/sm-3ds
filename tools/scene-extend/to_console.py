@@ -32,6 +32,20 @@ def main():
     print("changed pixels in the original area: %d, colours not in the original: %d" % (changed, off))
     if changed or off:
         sys.exit("the picture breaks the rules; fix it (paste the original back, restrict the colours)")
+    # A row the original dithers at its edge (a pixel of one colour, one of another, ...: the floor's edge) the AI
+    # continues as one colour: take the pattern on into the margin, in the original's phase (8 pixels must follow it).
+    dithered = 0
+    for y in range(240):
+        r = min(max(y - Y, 0), H - 1)
+        for xs, margin in ((range(0, 8), range(0, X)), (range(W - 8, W), range(X + W, 400))):
+            a, b = orig.getpixel((xs[0], r)), orig.getpixel((xs[1], r))
+            if a == b or any(orig.getpixel((x, r)) != (a if (x - xs[0]) % 2 == 0 else b) for x in xs):
+                continue
+            dithered += 1
+            for x in margin:
+                if pic.getpixel((x, y)) in (a, b):
+                    pic.putpixel((x, y), a if (x - X - xs[0]) % 2 == 0 else b)
+    print("zipper edges continued into the margins: %d" % dithered)
     index = {}
     for i in range(255, 0, -1):
         w = struct.unpack_from("<H", cg, i * 2)[0]
