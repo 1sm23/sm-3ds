@@ -796,6 +796,14 @@ Lessons from mzm that apply directly:
   Ticked 2026-10-12: tried by the owner on the console (jump on B, shoot on Y, the missile on Y and the grapple on X);
   the weapon they did not have fired the missile, fixed (see the decisions log); merged into `release/v0.6.5`.
 
+- [ ] **P4.19** Non-gameplay screens in WIDE (owner's request, 2026-10-14; planned, not started). The title,
+  opening cinematic, file select, death and game over, Ceres escape and the ending at 400x240 in PIXEL PERFECT,
+  the parts the game does not draw generated with an image AI from a screen dump (the Minish Cap port does it,
+  `../zelda-tmc-3ds/docs/wide-scene-extension.md`; the Zero Mission plan is `../mzm/docs/3ds-wide-scene-extension-plan.md`).
+  Full brief, scene inventory, recipes, the AI delivery package and the open decisions: `docs/wide-scene-extension.md`.
+  *Done when:* the pilot (the title) is seen at 400x240 on the console with no seam, fades included, WIDE off is
+  bit-identical, and the other screens follow the brief's order of work.
+
 ## Phase 5: completion
 
 - [ ] **P5.1** Full 100% playthrough on hardware, bugs filed as issues.
