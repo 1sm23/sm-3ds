@@ -89,7 +89,7 @@ ends), E affine/windows/HDMA (leave ORIGINAL), F palette-cycled (indices), G pro
    columns and rows stretched to the screen's edges, no assets. This alone removes the
    black bars on menus and black cutscenes.
 4. **Picture loader**: a file per scene, from the SD card first (`sdmc:/3ds/Super Metroid
-   3DS/wide-scenes/`) then romfs only if the owner decides to ship (section 7), lazy,
+   3DS/wide-scenes/`, an override) then the romfs (`romfs:/wide-scenes/`, shipped), lazy,
    freed on leaving the scene; RGB565 or palette indices; the game's own colour handling.
    Copy the shape of `../zelda-tmc-3ds/platform/3ds/source/scene_pictures_3ds.c` but with
    a small descriptor table instead of one global per scene.
@@ -192,10 +192,13 @@ and WIDE off is bit-identical (`make test`).
 
 ## 8. Open decisions for the owner
 
-- **Ship generated parts or keep them on the SD card?** The Zelda port ships them in its
-  romfs (owner's decision, 2026-10-13). Here the ROM is never in the package and the CI
-  refuses a `.smc`/`.sfc` in `romfs/`; generated parts are derived art, so decide
-  explicitly. Default until told: **SD card only**, like the Zelda port started.
+- ~~Ship generated parts or keep them on the SD card?~~ **Decided 2026-10-14 (owner): ship
+  them in the romfs**, so players get the screens with no setup (as the Zelda port does).
+  Only the generated areas ship, the original area left transparent: no pixel of the game's
+  art is in the files, and no ROM data is ever in the package (the CI's refusal of a
+  `.smc`/`.sfc` in `romfs/` is unaffected). A file of the same name in the SD data folder
+  still overrides the shipped one. Dumps, templates, whole pictures and the AI delivery
+  folders stay out of the repository.
 - **SCALED**: skip (PIXEL PERFECT only) or generate a second set at 274x240.
 - **Which screens** merit an AI run; the rest keep edge stretch.
 - **Mode 7**: show more plane natively, or leave Ceres as it is.
