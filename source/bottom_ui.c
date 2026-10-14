@@ -93,6 +93,28 @@ static const char *StandingNotice(void) {
   return FtpServer_Notice();
 }
 
+// The notice's line with how far it is: "RECEIVING THE INSTALLER 42%", "INSTALLING 80%", "RESTARTING IN 7 S"
+// (a received .cia or SITE INSTALL, then the wait before the new build starts). `permille` is -1 when the
+// total is not known (the client sent no ALLO): no bar, no percentage.
+static const char *NoticeLine(char *out, size_t cap, int *permille) {
+  const char *notice = StandingNotice();
+  *permille = -1;
+  if (!notice) return NULL;
+  unsigned long long done = 0, total = 0;
+  const int phase = FtpServer_Progress(&done, &total);
+  if (phase == 3 && total) {
+    *permille = (int)(done * 1000 / total);
+    const unsigned left = (unsigned)((total - done + 999) / 1000);
+    snprintf(out, cap, "%s %u S", notice, left);
+  } else if (total) {
+    *permille = (int)(done >= total ? 1000 : done * 1000 / total);
+    snprintf(out, cap, "%s %d%%", notice, *permille / 10);
+  } else {
+    snprintf(out, cap, "%s...", notice);
+  }
+  return out;
+}
+
 // The install-only FTP server of a production build (dev-ftp.txt): its address and a CANCEL that
 // stops it until the game is opened again. Over every tab and window; only that button is live.
 static Rect DevFtpCancelRect(void) {
@@ -117,12 +139,16 @@ static void DrawDevFtp(Surface s) {
 // The standing notice as a box in the middle of the screen, laid out like mzm's (a "!" badge, a gold
 // title over the text): it must not be missed, an install is about to restart the game.
 static void DrawStandingNotice(Surface s) {
-  const char *body = StandingNotice();
+  char line[64];
+  int permille;
+  const char *body = NoticeLine(line, sizeof(line), &permille);
   if (!body) return;
   const char *title = "NEW BUILD";
-  const int tw = UiTextWidth(title, 1), bw = UiTextWidth(body, 1), text_w = tw > bw ? tw : bw;
+  // Wide enough for the longest line the notice takes, so the box does not change size as it counts.
+  const int tw = UiTextWidth(title, 1), bw = UiTextWidth("RECEIVING THE INSTALLER 100%", 1);
+  const int text_w = tw > bw ? tw : bw;
   const int pad = 10, icon = 22, gap = 8;
-  const int w = 4 + pad + icon + gap + text_w + pad, h = 44;
+  const int w = 4 + pad + icon + gap + text_w + pad, h = 56;
   const int x = (SCREEN_W - w) / 2, y = (SCREEN_H - h) / 2;
   const uint32_t amber = RGB(245, 175, 45);
   UiFillRect(s, x + 3, y + 3, w, h, RGB(0, 0, 0));
@@ -136,6 +162,11 @@ static void DrawStandingNotice(Surface s) {
   const int tx = ix + icon + gap;
   UiDrawText(s, tx, y + 10, 1, COL_TITLE, title);
   UiDrawText(s, tx, y + 26, 1, RGB(190, 210, 240), body);
+  if (permille >= 0) {   // the bar, over the whole text column
+    const int bx = tx, by = y + 42, bwid = text_w, fill = bwid * permille / 1000;
+    UiFillRect(s, bx, by, bwid, 6, RGB(40, 52, 84));
+    UiFillRect(s, bx, by, fill, 6, amber);
+  }
 }
 
 // A tap that landed on a window or the update prompt (an overlay) lights only that overlay's buttons,
@@ -3397,11 +3428,19 @@ bool BottomUi_Frame(const UiPerf *p) {
   const char *why = NULL;   // what asked for a redraw this frame, for the debug log
   {
     static const char *notice_seen;
+    static int permille_seen = -2;
+    static char line_seen[64];
     static bool dev_ftp_seen;
-    const char *notice = StandingNotice();
+    char line[64];
+    int permille;
+    const char *notice = NoticeLine(line, sizeof(line), &permille);
     const bool dev_ftp = FtpServer_InstallOnly();
-    if (notice != notice_seen || dev_ftp != dev_ftp_seen) {
+    // Redrawn when the line (a percent, a second) or the bar's pixel moves.
+    if (notice != notice_seen || dev_ftp != dev_ftp_seen || permille / 10 != permille_seen / 10 ||
+        (notice && strcmp(line, line_seen) != 0)) {
       notice_seen = notice;
+      permille_seen = permille;
+      snprintf(line_seen, sizeof(line_seen), "%s", notice ? line : "");
       dev_ftp_seen = dev_ftp;
       g_dirty = 2;
       why = "standing notice changed";
