@@ -65,7 +65,7 @@ FBI and ftpd, so `./build_3ds.sh --ftp` and the usual client bookmarks work) and
 
 The tools come back at the next launch as they were left (`config.ini`: `debug_log`,
 `debug_log_direct`, `debug_ftp`; DEBUG_TOOLS builds only, a plain build neither reads nor
-writes them). An FTP server left on starts again by itself, retrying every ~2 s until Wi-Fi is
+writes them). Debug builds start it on the first run (like the log); an FTP server left on starts again by itself, retrying every ~2 s until Wi-Fi is
 up (the cell says `WAITING FOR WI-FI`; tapping its button cancels it). The recorders, GPU
 CHECK and the like are one-shot and start off.
 
@@ -93,9 +93,21 @@ again to get it back). Create the file once, while a debug build still has its F
 `curl -u sm3ds:PASSWORD -T /dev/null ftp://<ip>:5000/3ds/Super%20Metroid%203DS/dev-ftp.txt`.
 Nothing about it is shown to a player or listed in the release notes. Delete the file to turn it off.
 
-Its thread runs on core 1 (the audio thread's) below the game's priority and sleeps on the
-network, so it costs nothing while idle; a transfer competes with the game for the SD card. It
-shares the socket service with the updater (`net_service.c`). Transfers are written to the SD log.
+Its thread runs on core 1 (the audio thread's) below the game's priority and naps 10 ms between
+polls that do not wait, so it costs next to nothing while idle; a transfer competes with the game
+for the SD card. It shares the socket service with the updater and RetroAchievements
+(`net_service.c`): libctru sends every socket call of the process through one SOC session, so the
+server never blocks inside it (no waiting poll, sends of at most 8 KB), or their downloads would
+crawl while it runs. Transfers are written to the SD log.
+
+Stopping it waits up to 3 s for the server thread (a remote-control request waiting for the game
+gives up at once). A thread that does not end is left running, with the network service under it
+(the cell says `STUCK, RESTART THE GAME` and no server starts until the game is restarted): freeing
+them froze the game. The SD log (LOG TO SD; these lines are flushed at once, buffered or not)
+records each stop (`ftp stop: server thread <what it was doing>`, `ftp stop: done`, or
+`ftp stop: thread did not end in 3 s (...), left running`) and a thread busy in one command for
+30 s (`WATCHDOG: ftp server thread busy: command RETR for 30.0 s`; a SITE command is named by its
+sub-command, `command PEEK`).
 
 ### Installing a build over FTP
 
@@ -104,7 +116,7 @@ running game and relaunches into the new build (the FTP server comes back on wit
 `./build_3ds.sh --install IP` builds, uploads to `/3ds/Super Metroid 3DS/update/dev.cia` and
 installs in one go; the interactive menu offers it as "Install into the running game". Any
 unsaved progress is lost. While a `.cia` is received and while it installs, the bottom screen
-says so on any tab, in a box in the middle (`NEW BUILD`: `RECEIVING THE INSTALLER...`, then `INSTALLING - THE GAME WILL RESTART`).
+says so on any tab, in a box in the middle (`NEW BUILD`: `RECEIVING THE INSTALLER 42%`, then `INSTALLING 80%`, then `RESTARTING IN 7 S`: a bar under each, and the game relaunches 10 s after the install). The percentages need the client to announce the size with `ALLO` before the upload (`build_3ds.sh --install` does; with plain curl add `-Q "+ALLO <bytes>"`); without it the box says `...` and shows no bar.
 A CIA of another title is refused. The first build with this feature has to arrive by FBI or
 ftpd as before: there is no server to talk to until it runs once.
 

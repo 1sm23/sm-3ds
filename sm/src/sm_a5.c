@@ -48,6 +48,7 @@ void Enemy_NormalFrozenAI_A5(void) {  // 0xA58041
 
 void Draygon_Init(void) {  // 0xA58687
   uint16 j;
+  g_rtl_enemy_bg2_room = room_ptr;   // 3DS port: Draygon's body is BG2, see g_rtl_enemy_bg2_room
 
   for (int i = 48; i >= 0; i -= 2)
     target_palettes[(i >> 1) + 144] = kDraygon_MorePalettes[i >> 1];

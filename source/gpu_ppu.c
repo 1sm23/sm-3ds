@@ -60,6 +60,12 @@ static int g_hud_y;
 void GpuPpu_SetHudY(int y) { g_hud_y = y; }
 
 static int g_layer_dx[3];
+static int g_clip_layer = -1, g_clip_x0, g_clip_x1, g_clip_y0, g_clip_y1;
+
+void GpuPpu_SetLayerClip(int layer, int x0, int x1, int y0, int y1) {
+  g_clip_layer = layer >= 0 && layer < 3 ? layer : -1;
+  g_clip_x0 = x0, g_clip_x1 = x1, g_clip_y0 = y0, g_clip_y1 = y1;
+}
 
 void GpuPpu_SetLayerShiftX(int layer, int dx) {
   if (layer >= 0 && layer < 3) g_layer_dx[layer] = dx;
@@ -255,6 +261,7 @@ static const char *AnalyzeLine(const PpuLineState *st, LineInfo *info, int line)
         info->partial[sub] |= 1 << layer;
       }
     }
+    if (g_clip_layer >= 0 && (line - 1 < g_clip_y0 || line - 1 >= g_clip_y1)) on &= (uint8_t)~(1 << g_clip_layer);
     if (sub) info->sub = on; else info->main = on;
   }
   // The colour window only matters when clip or prevent-math is "inside" or "outside"
@@ -1181,7 +1188,12 @@ static const char *EmitBgQuads(const Ppu *ppu, const PpuLineCapture *cap, int la
   const BgLayer *bgl = &cap->line[l0].bgLayer[layer];
   g_msgbox = layer == 2 && g_msgbox_map >= 0 && l0 > g_narrow_bg3_rows && bgl->tilemapAdr == g_msgbox_map &&
              !bgl->tilemapWider && !bgl->tilemapHigher;
-  const int vx0 = narrow ? g_hud_x : g_x0, vx1 = narrow ? g_hud_x + 256 : g_x1;
+  int vx0 = narrow ? g_hud_x : g_x0, vx1 = narrow ? g_hud_x + 256 : g_x1;
+  if (g_clip_layer == layer && !narrow) {   // GpuPpu_SetLayerClip: one copy of a picture the tilemap repeats
+    if (vx0 < g_clip_x0) vx0 = g_clip_x0;
+    if (vx1 > g_clip_x1) vx1 = g_clip_x1;
+    if (vx1 <= vx0) return NULL;
+  }
   // Texel column of screen column vx0 (the narrow layer is moved, not scrolled), with the
   // layer's extra shift.
   const int sx0 = (narrow ? 0 : vx0) + g_layer_dx[layer];
