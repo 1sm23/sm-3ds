@@ -24,6 +24,10 @@ void SmWide_HideHud(bool status, bool map);
 // The title's mode 7 scenes are on screen (game state 1 with BG mode 7, reg_BGMODE): the view is widened there too, with
 // the plane in the margins (and nothing where the plane ends).
 bool SmWide_TitleMode7(void);
+
+// Draygon's fight: the screen columns and output rows her body's picture (BG2) is in, so that the copy the tilemap's wrap
+// shows above or below it, or beside it in the WIDE margins, is not drawn. False in any other case (no clip).
+bool SmWide_Bg2Clip(int *x0, int *x1, int *y0, int *y1);
 void SmWide_SetView(int margin_x, int extra_top, int extra_bottom, bool hud_over_room);
 
 // The last frame's margins: 2 * margin_x in all, but leaning away from a room edge that

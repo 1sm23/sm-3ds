@@ -997,6 +997,11 @@ int main(int argc, char** argv) {
         GpuPpu_SetHudY(hud_y);
         GpuPpu_SetSpritePriorityOrder(SmWide_Gameplay() && (osGet3DSliderState() > 0 || g_ui.force_3d));
         GpuPpu_SetLayerShiftX(1, bg2_dx);
+        {   // Draygon's body: one copy of its picture (the tilemap repeats every 256 rows)
+          int bx0, bx1, by0, by1;
+          if (SmWide_Bg2Clip(&bx0, &bx1, &by0, &by1)) GpuPpu_SetLayerClip(1, bx0, bx1, by0, by1);
+          else GpuPpu_SetLayerClip(-1, 0, 0, 0, 0);
+        }
         GpuPpu_SetNarrowBg3Rows(wide ? kSmWideHudRows : 0);   // the HUD over the room: WIDE only
         GpuPpu_SetDeferTiles(224, true);   // animated tiles and palette changes: at most 224 decoded a frame, the rest later
         GpuPpu_SetNoSpriteWrap(margin_l || margin_r);

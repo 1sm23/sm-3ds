@@ -188,6 +188,11 @@ void GpuPpu_SetSpritePriorityOrder(bool on);
 // Added to a BG layer's horizontal scroll on every line of the next frames (0..2 = BG1..3).
 void GpuPpu_SetLayerShiftX(int layer, int dx);
 
+// A BG layer is drawn only in the screen columns [x0, x1) and output rows [y0, y1) of the next frames (0..2 = BG1..3;
+// layer < 0: no clip). For a layer that holds one picture on a tilemap smaller than the view plus its scroll: the
+// tilemap repeats, and the picture's copy shows (Draygon's body, above it and, in WIDE, at the other side).
+void GpuPpu_SetLayerClip(int layer, int x0, int x1, int y0, int y1);
+
 // Full position of each of the 128 OAM entries (INT16_MIN = unknown, a Y of 0x4000 or more
 // = hidden), used instead of the 9-bit X and the wrapping 8-bit Y when set: with margins
 // a sprite far off one side would read as one in the other side's margin, and one below

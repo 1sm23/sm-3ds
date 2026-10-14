@@ -10,6 +10,7 @@
 #include "src/sm_cpu_infra.h"
 #include "src/sm_rtl.h"
 #include "src/funcs.h"
+#include "src/enemy_types.h"
 #include "src/snes/ppu.h"
 #include "src/snes/snes.h"
 
@@ -291,9 +292,9 @@ static void Bg2Shift(void) {
     g_bg2_dx = 0;
     return;
   }
-  // An enemy that draws its body in BG2 (Kraid) moves it with BG1 and its own sprites: no parallax to restore, or the body
-  // slides away from the arms.
-  if (g_rtl_enemy_bg2_room == room_ptr && room_ptr == 0xA59F) {   // Kraid's room
+  // An enemy that draws its body in BG2 (Kraid, Draygon) moves it with BG1 and its own sprites: no parallax to restore, or
+  // the body slides away from the arms and hands (Draygon: the lean changes as Samus climbs).
+  if (g_rtl_enemy_bg2_room == room_ptr && (room_ptr == 0xA59F || room_ptr == 0xDA60)) {   // Kraid's and Draygon's rooms
     g_bg2_dx = 0;
     return;
   }
@@ -606,6 +607,31 @@ void SmWide_Rows(int *top, int *bottom, int *hud_y) {
 bool SmWide_Filled(void) { return g_filled; }
 
 bool SmWide_Mode7(void) { return g_mode7; }
+
+// Draygon's body is a picture on BG2's tilemap, which is 256 rows tall and repeats: with her low on the screen
+// (Samus climbing above her) a second body shows in the rows above, without the arms (they are sprites). Her hook
+// (Draygon_Func_36) sets BG2VOFS from her position plus a constant that is only known modulo 256, so which copy is
+// the real one is decided by her position: the top of the picture sits ~60 rows above her (measured on a dump:
+// y 409, camera 138, picture's top at row 206; the same for x: 62 columns left of her, 512 between copies). Only that
+// copy is drawn: screen columns [x0, x1), output rows [y0, y1).
+bool SmWide_Bg2Clip(int *x0, int *x1, int *y0, int *y1) {
+  if (room_ptr != 0xDA60 || enemy_gfx_drawn_hook.bank != 165 || enemy_gfx_drawn_hook.addr != FUNC16(Draygon_Func_36))
+    return false;
+  const Enemy_Draygon *E = Get_Draygon(0);
+  const int e = (int16)E->base.y_pos - (int16)layer1_y_pos;    // her row on the screen (may be off it)
+  const int mod = (-1 - (int)reg_BG2VOFS) & 255;               // output row of the picture's top, in [0, 256)
+  const int want = e - 60;
+  const int top = mod + 256 * ((want - mod + 128 + 256 * 8) / 256 - 8);   // the copy nearest to where she is
+  *y0 = top;
+  *y1 = top + 176;   // the picture is ~115 rows; less than the 256 between copies
+  const int ex = (int16)E->base.x_pos - (int16)layer1_x_pos;
+  const int xmod = (-(int)reg_BG2HOFS) & 511;   // screen column of the picture's left edge, in [0, 512)
+  const int xwant = ex - 62;
+  const int left = xmod + 512 * ((xwant - xmod + 256 + 512 * 8) / 512 - 8);
+  *x0 = left;
+  *x1 = left + 220;  // the picture is ~125 wide; less than the 512 between copies
+  return true;
+}
 
 bool SmWide_Gameplay(void) { return RoomShown() || game_state == kGameState_11_LoadingNextRoom; }
 

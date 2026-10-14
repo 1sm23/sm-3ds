@@ -90,6 +90,23 @@ static void TestCollectNotes(void) {
     n = Updater_CollectNotes(kNotesJson, false, "v0.3.1", true, out, sizeof(out));
     CHECK(n == 1 && strncmp(out, "== v0.3.1 ==", 12) == 0);
 
+    /* stable channel: the betas on the way to the newest stable count (a stable lists everything since the previous
+     * stable); one newer than that stable, or older than the install, does not. */
+    {
+        static const char kWay[] =
+            "[{\"tag_name\":\"v0.6.8\",\"prerelease\":true,\"body\":\"<!-- sm-notes -->\\n- Newer beta\\n<!-- /sm-notes -->\"},"
+            "{\"tag_name\":\"v0.6.7\",\"prerelease\":false,\"body\":\"<!-- sm-notes -->\\n- Stable\\n<!-- /sm-notes -->\"},"
+            "{\"tag_name\":\"v0.6.6\",\"prerelease\":true,\"body\":\"<!-- sm-notes -->\\n- On the way\\n<!-- /sm-notes -->\"},"
+            "{\"tag_name\":\"v0.6.5\",\"prerelease\":false,\"body\":\"<!-- sm-notes -->\\n- Installed\\n<!-- /sm-notes -->\"}]";
+        n = Updater_CollectNotes(kWay, false, "v0.6.5", false, out, sizeof(out));
+        CHECK(n == 2);
+        CHECK(strcmp(out, "== v0.6.7 ==\n- Stable\n== v0.6.6 ==\n- On the way\n") == 0);
+        n = Updater_CollectNotes(kWay, true, "v0.6.5", false, out, sizeof(out));   /* the beta channel: all three, once */
+        CHECK(n == 3);
+        n = Updater_CollectNotes(kWay, false, "v0.6.7", false, out, sizeof(out));  /* up to date: nothing */
+        CHECK(n == 0);
+    }
+
     /* tiny buffers: cut at a line boundary, "..." at the end, always terminated */
     {
         char tiny[40];
