@@ -278,16 +278,11 @@ static bool AddNotes(const char* seg, const char* segEnd, char* out, size_t cap,
     return true;
 }
 
-int Updater_CollectNotes(const char* json, bool allowBeta, const char* current,
-                         bool currentIsBeta, char* out, size_t outSize) {
+/* The newest stable release newer than `current` in the list (tag copied to `out`), or false. */
+static bool NewestStable(const char* json, const char* current, bool currentIsBeta, char* out, size_t cap) {
     static const char kTag[] = "\"tag_name\"";
     const char* p = json;
-    size_t len = 0;
-    int count = 0;
-
-    if (outSize == 0) return 0;
-    out[0] = '\0';
-    if (outSize < NOTES_RESERVE + 8) return 0;
+    bool found = false;
 
     while ((p = strstr(p, kTag)) != NULL) {
         const char* next = strstr(p + sizeof(kTag) - 1, kTag);
@@ -303,8 +298,53 @@ int Updater_CollectNotes(const char* json, bool allowBeta, const char* current,
                 while (pre < segEnd && (*pre == ' ' || *pre == ':')) pre++;
                 prerelease = (strncmp(pre, "true", 4) == 0);
             }
-            if ((allowBeta || !prerelease) &&
-                Updater_IsNewerBuild(current, currentIsBeta, tag, prerelease)) {
+            if (!prerelease && Updater_IsNewerBuild(current, currentIsBeta, tag, false) &&
+                (!found || Updater_IsNewer(out, tag))) {
+                snprintf(out, cap, "%s", tag);
+                found = true;
+            }
+        }
+        p = segEnd;
+        if (!next) break;
+    }
+    return found;
+}
+
+int Updater_CollectNotes(const char* json, bool allowBeta, const char* current,
+                         bool currentIsBeta, char* out, size_t outSize) {
+    static const char kTag[] = "\"tag_name\"";
+    const char* p = json;
+    size_t len = 0;
+    int count = 0;
+    char stable[32];
+    bool haveStable;
+
+    if (outSize == 0) return 0;
+    out[0] = '\0';
+    if (outSize < NOTES_RESERVE + 8) return 0;
+    /* On the stable channel the update offered is the newest stable release, and what changed on the way
+     * includes the betas before it (a stable lists everything since the previous stable): their notes
+     * count too, up to that release. Each release's notes appear once, whatever the channel. */
+    haveStable = NewestStable(json, current, currentIsBeta, stable, sizeof(stable));
+
+    while ((p = strstr(p, kTag)) != NULL) {
+        const char* next = strstr(p + sizeof(kTag) - 1, kTag);
+        const char* segEnd = next ? next : p + strlen(p);
+        char tag[32];
+        const char* pre;
+        bool prerelease = false;
+
+        if (FindString(p, segEnd, "tag_name", tag, sizeof(tag))) {
+            pre = strstr(p, "\"prerelease\"");
+            if (pre && pre < segEnd) {
+                pre += sizeof("\"prerelease\"") - 1;
+                while (pre < segEnd && (*pre == ' ' || *pre == ':')) pre++;
+                prerelease = (strncmp(pre, "true", 4) == 0);
+            }
+            const bool included_beta =
+                prerelease && !allowBeta && haveStable && Updater_IsNewer(current, tag) && !Updater_IsNewer(stable, tag);
+            if (((allowBeta || !prerelease) && Updater_IsNewerBuild(current, currentIsBeta, tag, prerelease)) ||
+                included_beta) {
                 char head[48];
 
                 snprintf(head, sizeof(head), "== %s ==", tag);
