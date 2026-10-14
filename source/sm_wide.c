@@ -74,11 +74,15 @@ bool SmWide_TitleMode7(void) {
   return game_state == kGameState_1_OpeningCinematic && (reg_BGMODE & 7) == 7;
 }
 
-// The title's picture whole, 1:1 (the zoom has ended): the plane's 256 columns are the screen's, and the margins
-// have nothing to show but generated art (source/scene_art.c).
+// The title's picture is in the mode 7 plane (its tile map holds tiles in the first 32x32 cells): the generated art
+// goes under it. Not while the animation starts (after the file select's B the plane is empty and black for a while).
 bool SmWide_TitleArt(void) {
-  return SmWide_TitleMode7() && reg_M7A == 0x100 && reg_M7D == 0x100 && reg_M7B == 0 && reg_M7C == 0 &&
-         reg_BG1HOFS == 0 && reg_BG1VOFS == 0;
+  if (!SmWide_TitleMode7()) return false;
+  const Ppu *ppu = g_snes->ppu;
+  int tiles = 0;
+  for (int cy = 0; cy < 32; cy++)
+    for (int cx = 0; cx < 32; cx++) tiles += (ppu->vram[cy * 128 + cx] & 0xff) != 0;
+  return tiles >= 64;
 }
 
 static inline int FloorDiv16(int v) { return v >> 4; }   // arithmetic shift: floor

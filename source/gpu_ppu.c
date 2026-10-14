@@ -1305,26 +1305,31 @@ static inline int64_t FloorDiv64(int64_t a, int64_t b) {   // b > 0
 
 // The mode 7 plane over the band's lines [l0, l1]: one affine row per line, so the
 // matrix may change on every line (perspective) as well as between frames.
-static const char *EmitMode7Quads(const Ppu *ppu, const PpuLineCapture *cap, int l0, int l1, bool math, int scr) {
-  if (!g_m7_tex.px) {
+// One pass over the mode 7 plane's rows: the plane itself, or the generated art in plane coordinates (`tex` the art's,
+// its texel (x + 128, y + 128) is plane (x, y); `shift` 128, `level` below the plane's).
+static const char *EmitMode7Pass(const Ppu *ppu, const PpuLineCapture *cap, int l0, int l1, bool math, int scr, GpuTex *tex,
+                                 int shift, int level) {
+  const bool art = tex != &g_m7_tex;
+  if (!art && !g_m7_tex.px) {
     if (!GpuBackend_TexCreate(&g_m7_tex, 1024, 1024)) return "out of texture memory";
     g_m7_fresh = true;
   }
-  if (g_m7_tracked_frame != g_frame_no) {   // first use: GpuPpu_BuildFrame tracks from now on
+  if (!art && g_m7_tracked_frame != g_frame_no) {   // first use: GpuPpu_BuildFrame tracks from now on
     M7Track(ppu);
     g_m7_tracked_frame = g_frame_no;
   }
-  g_m7_used_frame = g_frame_no;
+  if (!art) g_m7_used_frame = g_frame_no;
   // Rows: the band's lines, plus the extra rows above or below when the band touches that
   // edge (the first or last line's matrix, carried on: the plane goes on there too).
   // Columns: the whole frame, margins included.
   const int la = l0 == 1 ? 1 - g_extra_top : l0, lb = l1 == kGpuRows ? kGpuRows + g_extra_bottom : l1;
   // Texels the band can show: the ends of each row, since a row is a straight line.
-  const bool border = cap->line[l0].m7largeField;
+  const bool border = art || cap->line[l0].m7largeField;
   int x0 = INT32_MAX, x1 = INT32_MIN, y0 = INT32_MAX, y1 = INT32_MIN;
   for (int l = la; l <= lb; l++) {
     uint32_t ax, ay, adx, ady;
     M7LineStart(&cap->line[l < l0 ? l0 : l > l1 ? l1 : l], l, &ax, &ay, &adx, &ady);
+    ax += (uint32_t)shift << 8, ay += (uint32_t)shift << 8;
     const int32_t ex[2] = { (int32_t)(ax + adx * (uint32_t)g_x0) >> 8, (int32_t)(ax + adx * (uint32_t)(g_x1 - 1)) >> 8 };
     const int32_t ey[2] = { (int32_t)(ay + ady * (uint32_t)g_x0) >> 8, (int32_t)(ay + ady * (uint32_t)(g_x1 - 1)) >> 8 };
     for (int i = 0; i < 2; i++) {
@@ -1343,7 +1348,7 @@ static const char *EmitMode7Quads(const Ppu *ppu, const PpuLineCapture *cap, int
     x0 &= 1023, x1 &= 1023, y0 &= 1023, y1 &= 1023;
     if (x0 > x1 || y0 > y1) x0 = y0 = 0, x1 = y1 = 1023;
   }
-  if (x0 <= x1 && y0 <= y1) M7Sync(ppu, x0, x1, y0, y1);
+  if (!art && x0 <= x1 && y0 <= y1) M7Sync(ppu, x0, x1, y0, y1);
   const int flags = (math ? kGpuQuadMath : 0) | (border ? kGpuQuadBorder : 0);
   // Each line's row, cut to the plane with the large field. Consecutive whole rows whose
   // starts advance by the same amount every line (and with the same per-pixel step) are
@@ -1360,6 +1365,7 @@ static const char *EmitMode7Quads(const Ppu *ppu, const PpuLineCapture *cap, int
     if (partial && ls != l) continue;
     if (l <= lb) {
       M7LineStart(&cap->line[ls], l, &ax, &ay, &adx, &ady);
+      ax += (uint32_t)shift << 8, ay += (uint32_t)shift << 8;
       if (border) {
         // Outside the plane is transparent: keep the pixels whose position is inside, so
         // the GPU never sees far-out coordinates (its 24-bit floats would lose the
@@ -1396,8 +1402,8 @@ static const char *EmitMode7Quads(const Ppu *ppu, const PpuLineCapture *cap, int
       }
     }
     if (run_n > 0 && run.i0 < run.i1 &&
-        !AddAffine(&g_m7_tex, run.i0, run_l - 1, run.i1 - run.i0, run_n, run.ax, run.ay, run.adx, run.ady, run_rdx,
-                   run_rdy, 5, flags))
+        !AddAffine(tex, run.i0, run_l - 1, run.i1 - run.i0, run_n, run.ax, run.ay, run.adx, run.ady, run_rdx,
+                   run_rdy, level, flags))
       return "too many quads";
     run_n = 0;
     if (l > lb) break;
@@ -1406,13 +1412,40 @@ static const char *EmitMode7Quads(const Ppu *ppu, const PpuLineCapture *cap, int
     if (partial) {
       if (i0 >= i1) continue;
       g_affine.ax = ax, g_affine.ay = ay, g_affine.adx = adx, g_affine.ady = ady;
-      if (!AddQuadWin(&g_m7_tex, i0, l - 1, i1 - i0, 1, 0, 0, 5, flags | kGpuQuadAffine, scr, 0)) return "too many quads";
+      if (!AddQuadWin(tex, i0, l - 1, i1 - i0, 1, 0, 0, level, flags | kGpuQuadAffine, scr, 0)) return "too many quads";
       continue;
     }
     run.ax = ax, run.ay = ay, run.adx = adx, run.ady = ady, run.i0 = i0, run.i1 = i1;
     run_l = l, run_n = 1, run_rdx = run_rdy = 0;
   }
   return NULL;
+}
+
+// Generated art around the title's mode 7 picture (docs/wide-scene-extension.md): a 1024x1024 texture where texel
+// (x + 128, y + 128) is plane (x, y), so the art is under the plane wherever the plane is empty, zoomed or not, with the
+// plane's own matrix, fades and colour math.
+static GpuTex g_art_tex;
+static bool g_art_show;
+enum { kArtShift = 128, kArtX = 72, kArtY = 7 };   // the canvas' (0, 0) is plane (-72, -7): the picture's row 1 at 8
+
+bool GpuPpu_SetSceneArt(const uint16_t *px) {   // 400x240 RGBA5551, rows from the top; alpha 0 = nothing
+  if (!px) return g_art_tex.px != NULL;
+  if (!g_art_tex.px && !GpuBackend_TexCreate(&g_art_tex, 1024, 1024)) return false;
+  GpuBackend_BeforeTexWrite();
+  for (int y = 0; y < 240; y++)
+    for (int x = 0; x < 400; x++)
+      g_art_tex.px[GpuTexelIndex(x - kArtX + kArtShift, y - kArtY + kArtShift, 1024)] = px[y * 400 + x];
+  GpuBackend_TexWritten(&g_art_tex, 0, 1023);
+  return true;
+}
+void GpuPpu_ShowSceneArt(bool on) { g_art_show = on && g_art_tex.px; }
+
+static const char *EmitMode7Quads(const Ppu *ppu, const PpuLineCapture *cap, int l0, int l1, bool math, int scr) {
+  if (g_art_show) {
+    const char *err = EmitMode7Pass(ppu, cap, l0, l1, math, scr, &g_art_tex, kArtShift, 4);
+    if (err) return err;
+  }
+  return EmitMode7Pass(ppu, cap, l0, l1, math, scr, &g_m7_tex, 0, 5);
 }
 
 static const char *EmitMode7(const Ppu *ppu, const PpuLineCapture *cap, int l0, int l1, bool math, int scr) {

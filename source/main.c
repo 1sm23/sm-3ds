@@ -1000,14 +1000,14 @@ int main(int argc, char** argv) {
         GpuPpu_SetLayerShiftX(1, bg2_dx);
         {   // The title's picture whole: generated art in the margins (loaded the first time it is wanted)
           static bool art_tried;
-          const bool art = wide > 0 && g_ui.pixel_perfect && SmWide_TitleArt();
+          const bool art = wide > 0 && SmWide_TitleArt();
           if (art && !art_tried) {
             static uint16_t px[kSceneArtPixels];
             art_tried = true;
-            if (SceneArt_Read("title", px)) GpuPpu3ds_SetSceneArt(px);
+            if (SceneArt_Read("title", px)) GpuPpu_SetSceneArt(px);
             else Debug_Log("scene art: no title art found");
           }
-          GpuPpu3ds_ShowSceneArt(art);
+          GpuPpu_ShowSceneArt(art);
         }
         {   // Draygon's body: one copy of its picture (the tilemap repeats every 256 rows)
           int bx0, bx1, by0, by1;
