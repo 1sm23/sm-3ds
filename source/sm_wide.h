@@ -20,6 +20,10 @@
 // on the top screen: what the bottom screen's tab shows instead. Called every frame; both false =
 // the HUD as the game draws it (and the game untouched). Only VRAM changes.
 void SmWide_HideHud(bool status, bool map);
+
+// Draygon's fight: the screen columns and output rows her body's picture (BG2) is in, so that the copy the tilemap's wrap
+// shows above or below it, or beside it in the WIDE margins, is not drawn. False in any other case (no clip).
+bool SmWide_Bg2Clip(int *x0, int *x1, int *y0, int *y1);
 void SmWide_SetView(int margin_x, int extra_top, int extra_bottom, bool hud_over_room);
 
 // The last frame's margins: 2 * margin_x in all, but leaning away from a room edge that
