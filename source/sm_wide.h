@@ -25,6 +25,9 @@ void SmWide_HideHud(bool status, bool map);
 // the plane in the margins (and nothing where the plane ends).
 bool SmWide_TitleMode7(void);
 
+// The options menu or the file select: wide with the starfield repeated and BG1's text cut to the 256 columns.
+bool SmWide_MenuView(void);
+
 // ... and its picture is loaded: the plane's empty parts show the generated art (scene_art.h, GpuPpu_SetSceneArt).
 bool SmWide_TitleArt(void);
 

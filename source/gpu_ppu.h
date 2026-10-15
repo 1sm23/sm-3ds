@@ -195,7 +195,7 @@ bool GpuPpu_SetSceneArt(const uint16_t *idx);   // NULL: only asks whether it is
 void GpuPpu_ShowSceneArt(bool on);
 
 // A BG layer is drawn only in the screen columns [x0, x1) and output rows [y0, y1) of the next frames (0..2 = BG1..3;
-// layer < 0: no clip). For a layer that holds one picture on a tilemap smaller than the view plus its scroll: the
+// each layer has its own; layer < 0 clears them all). For a layer that holds one picture on a tilemap smaller than the view plus its scroll: the
 // tilemap repeats, and the picture's copy shows (Draygon's body, above it and, in WIDE, at the other side).
 void GpuPpu_SetLayerClip(int layer, int x0, int x1, int y0, int y1);
 
