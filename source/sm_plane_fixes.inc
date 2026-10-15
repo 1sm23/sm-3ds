@@ -3631,6 +3631,16 @@ SM_PLANE_FIX(0xDAAE, 1, 12, 31, 0x8044, 0xF, kStereoPlay)  /* -> PLAY */
 SM_PLANE_FIX(0xDAAE, 1, 13, 31, 0x8044, 0xF, kStereoPlay)  /* -> PLAY */
 SM_PLANE_FIX(0xDAAE, 1, 14, 31, 0x8044, 0xF, kStereoPlay)  /* -> PLAY */
 SM_PLANE_FIX(0xDAAE, 1, 15, 31, 0x8044, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0x968F, 1, 2, 4, 0x86F4, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0x968F, 1, 13, 4, 0x82F4, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0x968F, 1, 2, 11, 0x86F4, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0x968F, 1, 13, 11, 0x82F4, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0x968F, 1, 14, 0, 0x82F4, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0x968F, 1, 14, 1, 0x82F4, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0x968F, 1, 14, 2, 0x82F4, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0x968F, 1, 14, 13, 0x82F4, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0x968F, 1, 14, 14, 0x82F4, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0x968F, 1, 14, 15, 0x82F4, 0xF, kStereoPlay)  /* -> PLAY */
 SM_TILE_PRIO(0x9C5E, 2, 26, 12, 0x01E5, 0xF, 1)  /* drawn with priority 1 */
 SM_TILE_PRIO(0x9C5E, 2, 27, 12, 0x01E6, 0xF, 1)  /* drawn with priority 1 */
 SM_TILE_PRIO(0x9C5E, 2, 28, 12, 0x01E5, 0xF, 1)  /* drawn with priority 1 */
