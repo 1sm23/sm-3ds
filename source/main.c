@@ -1008,12 +1008,16 @@ int main(int argc, char** argv) {
             else Debug_Log("scene art: no title art found");
           }
           GpuPpu_ShowSceneArt(art);
+          GpuPpu3ds_SetMenuStars(wide > 0 && g_ui.pixel_perfect && SmWide_MenuView());
         }
         {   // Draygon's body: one copy of its picture (the tilemap repeats every 256 rows)
           int bx0, bx1, by0, by1;
+          GpuPpu_SetLayerClip(-1, 0, 0, 0, 0);
           if (SmWide_Bg2Clip(&bx0, &bx1, &by0, &by1)) GpuPpu_SetLayerClip(1, bx0, bx1, by0, by1);
-          else if (wide > 0 && SmWide_MenuView()) GpuPpu_SetLayerClip(0, 0, 256, 0, 224);   // the menu's text: not repeated
-          else GpuPpu_SetLayerClip(-1, 0, 0, 0, 0);
+          else if (wide > 0 && SmWide_MenuView()) {   // the menu: its text and its starfield are not repeated
+            GpuPpu_SetLayerClip(0, 0, 256, 0, 224);
+            GpuPpu_SetLayerClip(1, 0, 256, 0, 224);
+          }
         }
         GpuPpu_SetNarrowBg3Rows(wide ? kSmWideHudRows : 0);   // the HUD over the room: WIDE only
         GpuPpu_SetDeferTiles(224, true);   // animated tiles and palette changes: at most 224 decoded a frame, the rest later
