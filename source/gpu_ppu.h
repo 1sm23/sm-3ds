@@ -188,8 +188,14 @@ void GpuPpu_SetSpritePriorityOrder(bool on);
 // Added to a BG layer's horizontal scroll on every line of the next frames (0..2 = BG1..3).
 void GpuPpu_SetLayerShiftX(int layer, int dx);
 
+// Generated art for the title's mode 7 picture (400x240 words, rows from the top: 0 = nothing, a CGRAM index, or 0x8000 | BGR555; its (72, 7) is
+// plane (0, 0)): drawn under the plane, with its matrix and palette, wherever the plane is empty. Set once; ShowSceneArt
+// per frame.
+bool GpuPpu_SetSceneArt(const uint16_t *idx);   // NULL: only asks whether it is set
+void GpuPpu_ShowSceneArt(bool on);
+
 // A BG layer is drawn only in the screen columns [x0, x1) and output rows [y0, y1) of the next frames (0..2 = BG1..3;
-// layer < 0: no clip). For a layer that holds one picture on a tilemap smaller than the view plus its scroll: the
+// each layer has its own; layer < 0 clears them all). For a layer that holds one picture on a tilemap smaller than the view plus its scroll: the
 // tilemap repeats, and the picture's copy shows (Draygon's body, above it and, in WIDE, at the other side).
 void GpuPpu_SetLayerClip(int layer, int x0, int x1, int y0, int y1);
 

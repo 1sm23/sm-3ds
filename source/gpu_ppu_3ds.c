@@ -871,6 +871,73 @@ void GpuPpu3ds_SetToast(const uint32_t *px) {
   GSPGPU_FlushDataCache(dst, kToastW * kToastH * 4);
 }
 
+// The options menu and the file select (SmWide_MenuView): the game's starfield repeats by itself, so the pattern of one
+// margin shows in the other; these stars are drawn over the margins instead, a fixed set (seeded once), with the shapes
+// and colours the game's own stars have: a pixel, and a diamond of four steps.
+static bool g_menu_stars;
+void GpuPpu3ds_SetMenuStars(bool on) { g_menu_stars = on; }
+
+typedef struct { int16_t x, y; uint8_t kind; } MenuStar;   // kind: 0..4 a pixel of kStarDot[kind], 5 a diamond
+enum { kMenuStarCount = 30, kStarKinds = 5 };
+static const uint16_t kStarDot[kStarKinds] = {   // BGR555 as the game's CGRAM
+  27 | 13 << 5 | 27 << 10, 16 | 18 << 10, 22 | 23 << 10, 20 | 22 << 5 | 23 << 10, 4 | 6 << 5 | 15 << 10,
+};
+static const uint16_t kStarGlow[4] = { 27 | 13 << 5 | 27 << 10, 16 | 18 << 10, 8 | 11 << 10, 3 | 7 << 10 };   // centre out
+static MenuStar g_stars[4][kMenuStarCount];   // left, right, then the 8 rows above and below the picture
+
+static uint32_t Rgb555ToAbgr(uint16_t c, int bright) {
+  const int r = Expand5(c & 31), g = Expand5((c >> 5) & 31), b = Expand5((c >> 10) & 31);
+  return (uint32_t)(r * bright / 255) | (uint32_t)(g * bright / 255) << 8 | (uint32_t)(b * bright / 255) << 16 | 0xff000000u;
+}
+
+static void DrawMenuStars(int bright) {
+  static bool init;
+  if (!init) {
+    init = true;
+    uint32_t s = 0x5eed1234u;
+    for (int side = 0; side < 2; side++)
+      for (int i = 0; i < kMenuStarCount; i++) {
+        s = s * 1664525u + 1013904223u;
+        const int x = (int)((s >> 8) % 72u), y = (int)((s >> 16) % 232u);
+        s = s * 1664525u + 1013904223u;
+        g_stars[side][i] = (MenuStar){ (int16_t)(side ? 328 + x : x), (int16_t)y, (uint8_t)(i < 3 ? 5 : (s >> 12) % kStarKinds) };
+      }
+    for (int strip = 2; strip < 4; strip++)   // pixels only: a diamond is taller than the 8 rows
+      for (int i = 0; i < kMenuStarCount / 3; i++) {
+        s = s * 1664525u + 1013904223u;
+        const int x = 72 + (int)((s >> 8) % 256u), y = (int)((s >> 16) % 8u);
+        s = s * 1664525u + 1013904223u;
+        g_stars[strip][i] = (MenuStar){ (int16_t)x, (int16_t)(strip == 2 ? y : 232 + y), (uint8_t)((s >> 12) % kStarKinds) };
+      }
+    for (int strip = 2; strip < 4; strip++)
+      for (int i = kMenuStarCount / 3; i < kMenuStarCount; i++) g_stars[strip][i] = (MenuStar){ 0, 0, 255 };   // none
+  }
+  C3D_TexBind(0, &g_main_tex);   // any bound texture: the colour comes from the constant
+  C3D_DepthTest(true, GPU_ALWAYS, GPU_WRITE_COLOR);
+  C3D_StencilTest(false, GPU_ALWAYS, 0, 0, 0);
+  for (int side = 0; side < 4; side++)
+    for (int i = 0; i < kMenuStarCount; i++) {
+      const MenuStar *st = &g_stars[side][i];
+      if (st->kind == 255) continue;
+      if (st->kind < kStarKinds) {
+        EnvSolid(Rgb555ToAbgr(kStarDot[st->kind], bright));
+        BatchBegin();
+        PushQuad((float)st->x, (float)st->y, (float)st->x + 1, (float)st->y + 1, 0, 0, 0, 0, 0);
+        BatchDraw();
+        continue;
+      }
+      for (int r = 3; r >= 0; r--) {   // the diamond, the outer steps first
+        EnvSolid(Rgb555ToAbgr(kStarGlow[r], bright));
+        BatchBegin();
+        for (int dy = -r; dy <= r; dy++) {
+          const int w = r - (dy < 0 ? -dy : dy);
+          PushQuad((float)(st->x - w), (float)(st->y + dy), (float)(st->x + w + 1), (float)(st->y + dy + 1), 0, 0, 0, 0, 0);
+        }
+        BatchDraw();
+      }
+    }
+}
+
 static u64 g_wait_ticks, g_submit_ticks;
 static u64 g_submit_part_ticks[3];   // of the submit: texture upload, the eyes' commands, EndFrame
 
@@ -959,6 +1026,8 @@ static void DrawEye(const GpuFrame *f, bool pixel_perfect, C3D_RenderTarget *rt_
     PushQuad(x0, y0, x1, y1, 0, u0, RtV(b->y0), u1, RtV(b->y1));
     BatchDraw();
   }
+  if (g_menu_stars && pixel_perfect && f->band_count > 0 && f->x0 == -72)
+    DrawMenuStars(f->bands[0].black ? 0 : f->bands[0].brightness * 255 / 15);
   // The port's own text, on the HUD's plane (screen pixels, whole like the planes').
   const int text_dx = g_eye_dx[kStereoHud];
   if (g_overlay_on) {

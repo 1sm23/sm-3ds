@@ -45,6 +45,7 @@
 #include "build_config.h"
 #include "cia_install.h"
 #include "ftp_server.h"
+#include "scene_art.h"
 #if DEBUG_TOOLS
 #include "debug_link.h"
 #endif
@@ -229,7 +230,7 @@ static bool GameplayView(void) {
 }
 
 static int WideMargin(void) {
-  if (!g_ui.wide || !GameplayView()) return 0;
+  if (!g_ui.wide || !(GameplayView() || SmWide_TitleMode7() || SmWide_MenuView())) return 0;
   return g_ui.pixel_perfect ? 72 : 60;
 }
 
@@ -997,10 +998,26 @@ int main(int argc, char** argv) {
         GpuPpu_SetHudY(hud_y);
         GpuPpu_SetSpritePriorityOrder(SmWide_Gameplay() && (osGet3DSliderState() > 0 || g_ui.force_3d));
         GpuPpu_SetLayerShiftX(1, bg2_dx);
+        {   // The title's picture whole: generated art in the margins (loaded the first time it is wanted)
+          static bool art_tried;
+          const bool art = wide > 0 && SmWide_TitleArt();
+          if (art && !art_tried) {
+            static uint16_t px[kSceneArtPixels];
+            art_tried = true;
+            if (SceneArt_Read("title", px)) GpuPpu_SetSceneArt(px);
+            else Debug_Log("scene art: no title art found");
+          }
+          GpuPpu_ShowSceneArt(art);
+          GpuPpu3ds_SetMenuStars(wide > 0 && g_ui.pixel_perfect && SmWide_MenuView());
+        }
         {   // Draygon's body: one copy of its picture (the tilemap repeats every 256 rows)
           int bx0, bx1, by0, by1;
+          GpuPpu_SetLayerClip(-1, 0, 0, 0, 0);
           if (SmWide_Bg2Clip(&bx0, &bx1, &by0, &by1)) GpuPpu_SetLayerClip(1, bx0, bx1, by0, by1);
-          else GpuPpu_SetLayerClip(-1, 0, 0, 0, 0);
+          else if (wide > 0 && SmWide_MenuView()) {   // the menu: its text and its starfield are not repeated
+            GpuPpu_SetLayerClip(0, 0, 256, 0, 224);
+            GpuPpu_SetLayerClip(1, 0, 256, 0, 224);
+          }
         }
         GpuPpu_SetNarrowBg3Rows(wide ? kSmWideHudRows : 0);   // the HUD over the room: WIDE only
         GpuPpu_SetDeferTiles(224, true);   // animated tiles and palette changes: at most 224 decoded a frame, the rest later

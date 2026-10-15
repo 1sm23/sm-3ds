@@ -67,6 +67,31 @@ static bool Mode7Room(void) { return irq_enable_mode7 && (reg_BGMODE_fake & 7) =
 // showing the plane's backdrop in the margins for a second.
 enum { kRoom_CeresRidley = 0xE0B5 };
 
+// The title's mode 7 scenes (the zooms into the laboratory before the logo, and the picture itself): not a
+// room, but a plane the margins can show, with nothing the game keeps up to date there, so they take the
+// mode 7 path of a room (no room masks). Mode 7 only: the other pages of the cinematic stay 4:3.
+bool SmWide_TitleMode7(void) {
+  return game_state == kGameState_1_OpeningCinematic && (reg_BGMODE & 7) == 7;
+}
+
+// The game's options menu and the file select (state 2 and 4): a black backdrop and a starfield on BG2 that repeats by
+// itself, so the margins show more of it with nothing generated; the text on BG1 is cut to the game's 256 columns
+// (GpuPpu_SetLayerClip) or it would repeat there too.
+bool SmWide_MenuView(void) {
+  return game_state == kGameState_2_GameOptionsMenu || game_state == kGameState_4_FileSelectMenus;
+}
+
+// The title's picture is in the mode 7 plane (its tile map holds tiles in the first 32x32 cells): the generated art
+// goes under it. Not while the animation starts (after the file select's B the plane is empty and black for a while).
+bool SmWide_TitleArt(void) {
+  if (!SmWide_TitleMode7()) return false;
+  const Ppu *ppu = g_snes->ppu;
+  int tiles = 0;
+  for (int cy = 0; cy < 32; cy++)
+    for (int cx = 0; cx < 32; cx++) tiles += (ppu->vram[cy * 128 + cx] & 0xff) != 0;
+  return tiles >= 64;
+}
+
 static inline int FloorDiv16(int v) { return v >> 4; }   // arithmetic shift: floor
 
 static inline void VramPut(Ppu *ppu, uint16_t adr, uint16_t v) {
@@ -477,7 +502,8 @@ static void BeforePpuDraw(void) {
   if (door && !shown) LeanDoor();
   // A mode 7 room: the plane holds the whole room (outside it, transparent), so nothing is
   // filled or masked; only the HUD's blank cells let it show under the HUD.
-  g_mode7 = RoomShown() && Mode7Room();
+  const bool title7 = SmWide_TitleMode7();
+  g_mode7 = (RoomShown() && Mode7Room()) || title7;
   if (g_mode7) {
     g_in_door = false;
     if (room_ptr == kRoom_CeresRidley) {   // framed as in the rest of the fight
@@ -489,7 +515,7 @@ static void BeforePpuDraw(void) {
     }
     g_bg2_dx = 0;
     PublishView();
-    if (g_rtl_wide_hud_over_room) HudSeeThrough(ppu);
+    if (g_rtl_wide_hud_over_room && !title7) HudSeeThrough(ppu);
     return;
   }
   if (!shown) {
@@ -672,6 +698,7 @@ static void MaskMode1Lines(GpuFrame *f, const PpuLineCapture *cap) {
 }
 
 void SmWide_AddMasks(GpuFrame *f, const PpuLineCapture *cap) {
+  if (SmWide_MenuView()) return;   // nothing is filled or masked: BG2 repeats, BG1 is clipped
   if (g_mode7 && room_ptr == kRoom_CeresRidley) {
     // The side margins (outside the room, black all fight); the extra rows above and below
     // keep the room's rows BG1 still holds from the last fill.

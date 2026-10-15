@@ -24,6 +24,10 @@ void GpuPpu3ds_SetOverlay(const uint32_t *px, int corner);
 // its top-left corner (BottomUi_DrawTopToastInto), drawn centred at the top; NULL hides it.
 void GpuPpu3ds_SetToast(const uint32_t *px);
 
+// The options menu and file select in WIDE: a fixed set of stars over the 72 px margins (their pattern would repeat).
+void GpuPpu3ds_SetMenuStars(bool on);
+
+
 // Timing of the last DrawAndPresent: waiting for the GPU to finish the frame before, and
 // building plus submitting the command list.
 void GpuPpu3ds_LastTimes(float *wait_ms, float *submit_ms);

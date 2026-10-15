@@ -333,6 +333,8 @@ OUTPUT_FILE := $(OUTPUT_DIR)/$(OUTPUT_NAME)
 
 APP_ICON := $(TOPDIR)/$(ICON)
 APP_ROMFS := $(TOPDIR)/$(ROMFS)
+# The CIA is rebuilt when a file of the romfs changes (language files, generated art), not only when the binary does.
+ROMFS_FILES := $(shell find $(TOPDIR)/$(ROMFS) -type f 2>/dev/null)
 
 COMMON_MAKEROM_PARAMS := -rsf $(RSF) -target t -exefslogo -elf $(OUTPUT_FILE).elf -icon icon.icn -banner banner.bnr \
 	-DAPP_TITLE="$(APP_TITLE)" -DAPP_PRODUCT_CODE="$(APP_PRODUCT_CODE)" -DAPP_UNIQUE_ID="$(APP_UNIQUE_ID)" \
@@ -377,11 +379,11 @@ gpu_ppu_3ds.o: gpu_ppu.shbin.o
 
 $(OUTPUT_FILE).3dsx: $(OUTPUT_FILE).elf $(OUTPUT_FILE).smdh
 
-$(OUTPUT_FILE).3ds: $(OUTPUT_FILE).elf banner.bnr icon.icn
+$(OUTPUT_FILE).3ds: $(OUTPUT_FILE).elf banner.bnr icon.icn $(ROMFS_FILES)
 	@$(MAKEROM) -f cci -o $(OUTPUT_FILE).3ds -DAPP_ENCRYPTED=true $(COMMON_MAKEROM_PARAMS)
 	@echo "built ... $(notdir $@)"
 
-$(OUTPUT_FILE).cia: $(OUTPUT_FILE).elf banner.bnr icon.icn
+$(OUTPUT_FILE).cia: $(OUTPUT_FILE).elf banner.bnr icon.icn $(ROMFS_FILES)
 	@$(MAKEROM) -f cia -o $(OUTPUT_FILE).cia -DAPP_ENCRYPTED=false $(COMMON_MAKEROM_PARAMS)
 	@echo "built ... $(notdir $@)"
 
