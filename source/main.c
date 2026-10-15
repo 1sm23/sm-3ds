@@ -230,7 +230,7 @@ static bool GameplayView(void) {
 }
 
 static int WideMargin(void) {
-  if (!g_ui.wide || !(GameplayView() || SmWide_TitleMode7())) return 0;
+  if (!g_ui.wide || !(GameplayView() || SmWide_TitleMode7() || SmWide_MenuView())) return 0;
   return g_ui.pixel_perfect ? 72 : 60;
 }
 
@@ -1012,6 +1012,7 @@ int main(int argc, char** argv) {
         {   // Draygon's body: one copy of its picture (the tilemap repeats every 256 rows)
           int bx0, bx1, by0, by1;
           if (SmWide_Bg2Clip(&bx0, &bx1, &by0, &by1)) GpuPpu_SetLayerClip(1, bx0, bx1, by0, by1);
+          else if (wide > 0 && SmWide_MenuView()) GpuPpu_SetLayerClip(0, 0, 256, 0, 224);   // the menu's text: not repeated
           else GpuPpu_SetLayerClip(-1, 0, 0, 0, 0);
         }
         GpuPpu_SetNarrowBg3Rows(wide ? kSmWideHudRows : 0);   // the HUD over the room: WIDE only

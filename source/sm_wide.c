@@ -74,6 +74,13 @@ bool SmWide_TitleMode7(void) {
   return game_state == kGameState_1_OpeningCinematic && (reg_BGMODE & 7) == 7;
 }
 
+// The game's options menu and the file select (state 2 and 4): a black backdrop and a starfield on BG2 that repeats by
+// itself, so the margins show more of it with nothing generated; the text on BG1 is cut to the game's 256 columns
+// (GpuPpu_SetLayerClip) or it would repeat there too.
+bool SmWide_MenuView(void) {
+  return game_state == kGameState_2_GameOptionsMenu || game_state == kGameState_4_FileSelectMenus;
+}
+
 // The title's picture is in the mode 7 plane (its tile map holds tiles in the first 32x32 cells): the generated art
 // goes under it. Not while the animation starts (after the file select's B the plane is empty and black for a while).
 bool SmWide_TitleArt(void) {
@@ -691,6 +698,7 @@ static void MaskMode1Lines(GpuFrame *f, const PpuLineCapture *cap) {
 }
 
 void SmWide_AddMasks(GpuFrame *f, const PpuLineCapture *cap) {
+  if (SmWide_MenuView()) return;   // nothing is filled or masked: BG2 repeats, BG1 is clipped
   if (g_mode7 && room_ptr == kRoom_CeresRidley) {
     // The side margins (outside the room, black all fight); the extra rows above and below
     // keep the room's rows BG1 still holds from the last fill.
