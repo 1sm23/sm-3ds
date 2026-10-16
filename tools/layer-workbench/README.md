@@ -107,6 +107,12 @@ extensions, 8 solid, 9 door, A spike, B crumble, C shot, E grapple, F bomb). A t
   quads "(set by hand)" and `STEREO_PLANES` splits a frame by plane.
 - `source/sm_sprite_prio.inc` (`SM_SPRITE_CAP(room, cap)`, written by hand: the workbench never touches it) draws the
   sprites of a room as of OAM priority `cap` at most, so walls given tile priority 1 cover a boss of priority 3.
+- `source/sm_m7_planes.inc` (written by hand: the workbench does not show Mode 7) splits the Mode 7 plane by depth, cell by
+  cell: `SM_M7_CELLS` (a rectangle of the plane's 128x128 map), `SM_M7_TILES` (tile numbers), `SM_M7_SOLID` (the cells over
+  solid blocks of the level data, for a plane drawn 1:1 with the room) send cells to a plane; `SM_M7_FILL`,
+  `SM_M7_FILL_ACROSS` and `SM_M7_NO_FILL` say what a farther plane shows behind a nearer cell (a copy of the cell above or
+  beside, or nothing). The renderer decodes each extra plane into a 1024x1024 texture of its own (at most two a room,
+  `GpuPpu_SetMode7Planes`). The file's header has the details; the Ceres elevator shaft `DF45` is its only room.
 - Not yet: sprites by enemy (`SM_SPRITE_PLANE`); the room's enemies and PLMs in the viewer; scene recordings and dumps
   as extra views (mzm has them). Rooms whose layer scrolls on so many lines that the GPU renderer composes its rows on
   the CPU (it never has, on the console) fall back to the CPU renderer while they have tile fixes.

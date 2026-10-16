@@ -665,6 +665,8 @@ static void TestFrame(const char *label, bool check_capture) {
   // The planes set by hand for the room (source/sm_plane_fixes.inc), as the console does in gameplay.
   GpuPpu_SetPlaneRule(SmWide_Gameplay() && SmPlanes_RoomHasRules() ? SmPlanes_LayerRule : NULL);
   GpuPpu_SetSlotPlanes(SmWide_Gameplay() && SmPlanes_RoomHasRules() ? TestSlotPlanes : NULL);
+  GpuPpu_SetMode7Planes(SmWide_Gameplay() && SmPlanes_Mode7Key() ? SmPlanes_Mode7CellPlane : NULL, SmPlanes_Mode7Key(),
+                        SmPlanes_Mode7BasePlane(), SmPlanes_Mode7FillReach(), SmPlanes_Mode7FillMode);
   if (getenv("DEFER")) GpuPpu_SetDeferTiles(atoi(getenv("DEFER")), getenv("DEFER_PAL") != NULL);   // DEFER=n: animated tiles at most n a frame (DEFER_PAL: palette changes too)
   clock_gettime(CLOCK_MONOTONIC, &t0);
   const bool built = GpuPpu_BuildFrame(g_snes->ppu, &g_cap, &g_frame, &why);
