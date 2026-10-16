@@ -95,7 +95,8 @@ void GpuRef_DrawFrameColumns(const GpuFrame *f, uint8_t *out, int pitch, int vx0
           no_math[x - vx0] |= c->no_math;
         }
       }
-      const int fr = b->fixed & 31, fg = (b->fixed >> 5) & 31, fb = (b->fixed >> 10) & 31;
+      const uint16_t fixed = GpuBandFixed(f, b, row);
+      const int fr = fixed & 31, fg = (fixed >> 5) & 31, fb = (fixed >> 10) & 31;
       for (int x = 0; x < n; x++) {
         const Px *p = &main[x];
         int r = clip[x] ? 0 : p->r, g = clip[x] ? 0 : p->g, bl = clip[x] ? 0 : p->b;
