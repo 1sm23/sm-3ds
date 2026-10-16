@@ -749,18 +749,14 @@ int main(int argc, char** argv) {
   g_frames_per_block = kDspBlockFrames;
   g_audiobuffer = (uint8 *)malloc(g_frames_per_block * g_audio_channels * sizeof(int16));
 
-  // The audio thread runs on the system core, which an application only gets a share
-  // of. The DSP needs about 1.5 ms of CPU per block at 804 MHz, so at 268 MHz (Old 3DS,
-  // or the speedup off) the SDL default of 30 % sat right at the limit and the sound
-  // broke up. Ask for more, like mzm: the largest share the system grants.
-  static const u32 kCore1Limits[] = { 80, 70, 50 };
+  // The audio thread and the FTP server run on the system core, which an application only gets a share of: 30 %, in
+  // the CIA and the 3dsx alike. More starves the system modules that run there too (GSP, the network, AM): with 80 %
+  // (2026-10-16) the 2DS's game FTP crawled at 3-18 KB/s, an install failed in AM, every GSP request waited its turn,
+  // and mzm measured audio underruns at 80 % and none at 50 or 30 (decisions log). The 3dsx must ask too: under the
+  // launcher it would keep its host's 80 %. The rsf allows up to 80 (MaxCpu 0xD0) only so a test build can try more.
   u32 core1_limit = 0;
-  Result core1_rc[3] = { 0 };
-  for (size_t i = 0; i < sizeof(kCore1Limits) / sizeof(kCore1Limits[0]); i++)
-    if (R_SUCCEEDED(core1_rc[i] = APT_SetAppCpuTimeLimit(kCore1Limits[i]))) break;
+  const Result core1_rc = APT_SetAppCpuTimeLimit(30);
   APT_GetAppCpuTimeLimit(&core1_limit);
-  if (core1_limit == 0 && R_SUCCEEDED(APT_SetAppCpuTimeLimit(30)))
-    APT_GetAppCpuTimeLimit(&core1_limit);
   g_audio_ok = AudioStart(core1_limit != 0);
 
   mkdir("saves", 0755);
@@ -780,9 +776,7 @@ int main(int argc, char** argv) {
     Debug_Log("console %s, audio %s (%d Hz, %d frames x %d buffers)", n3ds ? "New 3DS" : "Old 3DS/2DS",
               g_audio_ok ? "open" : "FAILED", kAudioRate, kAudioBufFrames, kAudioBufs);
     if (!g_audio_ok) Debug_Log("audio failed: ndspInit %08lX", (unsigned long)g_ndsp_rc);
-    Debug_Log("core 1 time limit: asked 80 -> %08lX, 70 -> %08lX, 50 -> %08lX; granted %lu %%",
-              (unsigned long)core1_rc[0], (unsigned long)core1_rc[1], (unsigned long)core1_rc[2],
-              (unsigned long)core1_limit);
+    Debug_Log("core 1 time limit: asked 30 -> %08lX; granted %lu %%", (unsigned long)core1_rc, (unsigned long)core1_limit);
   }
 
   PpuBeginDrawing(snes->snes_ppu, g_pixels, 256 * 4, 0);
