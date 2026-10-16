@@ -636,11 +636,11 @@ bool SmWide_Mode7(void) { return g_mode7; }
 // y 409, camera 138, picture's top at row 206; the same for x: 62 columns left of her, 512 between copies). Only that
 // copy is drawn: screen columns [x0, x1), output rows [y0, y1).
 bool SmWide_Bg2Clip(int *x0, int *x1, int *y0, int *y1) {
-  // Mother Brain's torso (phases 2 and 3, once the room's BG2 is hers: layer2_scroll_x 257) is a picture of ~14 x 11 tiles at
+  // Mother Brain's torso (phases 2 and 3, once the room's BG2 is hers: layer2_scroll_x 1: the game writes 257 to the pair; the room's own value is 0xC1) is a picture of ~14 x 11 tiles at
   // the top left of BG2's tilemap, which repeats every 256 columns: with her at the far left a second torso showed in the
   // right margin. The game scrolls it with BG2HOFS = 34 - her x (MotherBrain_MoveBodyDown): the picture's left edge is at
   // -BG2HOFS.
-  if (room_ptr == 0xDD58 && g_rtl_enemy_bg2_room == room_ptr && layer2_scroll_x == 257) {
+  if (room_ptr == 0xDD58 && g_rtl_enemy_bg2_room == room_ptr && layer2_scroll_x == 1) {
     *x0 = -(int16)reg_BG2HOFS;
     *x1 = *x0 + 200;   // the picture is ~112 wide; less than the 256 between copies
     *y0 = -4096;       // copies above and below are never in view
