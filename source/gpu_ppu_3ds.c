@@ -683,13 +683,26 @@ static bool SubByHand(const GpuFrame *f, const GpuBand *b) {
   return false;
 }
 
+// The band's rows [*y0, *y1) from *y1 on whose fixed colour is the same (a gradient changes it every few rows); false
+// after the last. Start with *y1 = b->y0.
+static bool NextFixedRun(const GpuFrame *f, const GpuBand *b, int *y0, int *y1, uint16_t *fixed) {
+  if (*y1 >= b->y1) return false;
+  *y0 = *y1;
+  *fixed = GpuBandFixed(f, b, *y0);
+  for (*y1 = *y0 + 1; *y1 < b->y1 && GpuBandFixed(f, b, *y1) == *fixed;) ++*y1;
+  return true;
+}
+
 static void DrawBandSub(const GpuFrame *f, const GpuBand *b) {
   // Backdrop: the fixed colour, alpha 0 = "no subscreen pixel here".
-  EnvSolid(ColorFrom555(b->fixed, 0));
   C3D_DepthTest(true, GPU_ALWAYS, GPU_WRITE_ALL);
   C3D_StencilTest(true, GPU_ALWAYS, 0, 0, 0xff);
   C3D_StencilOp(GPU_STENCIL_REPLACE, GPU_STENCIL_REPLACE, GPU_STENCIL_REPLACE);
-  SolidRect(f->x0, b->y0, f->x1, b->y1, 0);
+  uint16_t fixed;
+  for (int y0, y1 = b->y0; NextFixedRun(f, b, &y0, &y1, &fixed);) {
+    EnvSolid(ColorFrom555(fixed, 0));
+    SolidRect(f->x0, y0, f->x1, y1, 0);
+  }
   g_flat_sub = SubIsEffect(f, b) && !SubByHand(f, b);
   DrawQuads(f, b->sub_first, b->sub_count, false, false);
   g_flat_sub = false;
@@ -703,15 +716,18 @@ static void MathAdd(const GpuFrame *f, const GpuBand *b, int stencil_ref, int st
   const GPU_BLENDEQUATION eq = b->subtract ? GPU_BLEND_REVERSE_SUBTRACT : GPU_BLEND_ADD;
   const float v0 = RtV(b->y0), v1 = RtV(b->y1);
   C3D_TexBind(0, &g_sub_tex);
+  uint16_t fixed;
   if (!b->half) {
     // Subscreen pixels (alpha 1) and its backdrop (alpha 0: the fixed colour) added in one pass: the same sums as the two
     // passes below, which only `half` needs (it halves the pixels and never the backdrop).
-    EnvTexOverConst(ColorFrom555(b->fixed, 255));
     C3D_AlphaTest(false, GPU_ALWAYS, 0);
     C3D_AlphaBlend(eq, eq, GPU_ONE, GPU_ONE, GPU_ZERO, GPU_ONE);
-    BatchBegin();
-    PushQuad(f->x0, b->y0, f->x1, b->y1, 0, RtU(f->x0 - dx), v0, RtU(f->x1 - dx), v1);
-    BatchDraw();
+    for (int y0, y1 = b->y0; NextFixedRun(f, b, &y0, &y1, &fixed);) {
+      EnvTexOverConst(ColorFrom555(fixed, 255));
+      BatchBegin();
+      PushQuad(f->x0, y0, f->x1, y1, 0, RtU(f->x0 - dx), RtV(y0), RtU(f->x1 - dx), RtV(y1));
+      BatchDraw();
+    }
     return;
   }
   // Subscreen pixels (alpha 1): halved.
@@ -723,12 +739,14 @@ static void MathAdd(const GpuFrame *f, const GpuBand *b, int stencil_ref, int st
   PushQuad(f->x0, b->y0, f->x1, b->y1, 0, RtU(f->x0 - dx), v0, RtU(f->x1 - dx), v1);
   BatchDraw();
   // Subscreen backdrop (alpha 0): the fixed colour, never halved.
-  EnvConstRgbTexAlpha(ColorFrom555(b->fixed, 255));
   C3D_AlphaTest(true, GPU_EQUAL, 0);
   C3D_AlphaBlend(eq, eq, GPU_ONE, GPU_ONE, GPU_ZERO, GPU_ONE);
-  BatchBegin();
-  PushQuad(f->x0, b->y0, f->x1, b->y1, 0, RtU(f->x0 - dx), v0, RtU(f->x1 - dx), v1);
-  BatchDraw();
+  for (int y0, y1 = b->y0; NextFixedRun(f, b, &y0, &y1, &fixed);) {
+    EnvConstRgbTexAlpha(ColorFrom555(fixed, 255));
+    BatchBegin();
+    PushQuad(f->x0, y0, f->x1, y1, 0, RtU(f->x0 - dx), RtV(y0), RtU(f->x1 - dx), RtV(y1));
+    BatchDraw();
+  }
 }
 
 static void MathPass(const GpuFrame *f, const GpuBand *b) {
@@ -772,11 +790,14 @@ static void MathPass(const GpuFrame *f, const GpuBand *b) {
     }
     MathAdd(f, b, 2, 2, StereoDepth_EyeOffsetPx(u, g_slider, g_eye_sign));
   } else {
-    EnvSolid(ColorFrom555(b->fixed, 255));
     C3D_AlphaTest(false, GPU_ALWAYS, 0);
     if (b->half) C3D_AlphaBlend(eq, eq, GPU_CONSTANT_ALPHA, GPU_CONSTANT_ALPHA, GPU_ZERO, GPU_ONE);
     else C3D_AlphaBlend(eq, eq, GPU_ONE, GPU_ONE, GPU_ZERO, GPU_ONE);
-    SolidRect(f->x0, b->y0, f->x1, b->y1, 0);
+    uint16_t fixed;
+    for (int y0, y1 = b->y0; NextFixedRun(f, b, &y0, &y1, &fixed);) {
+      EnvSolid(ColorFrom555(fixed, 255));
+      SolidRect(f->x0, y0, f->x1, y1, 0);
+    }
   }
   C3D_AlphaTest(false, GPU_ALWAYS, 0);
   BlendOff();
