@@ -310,9 +310,10 @@ static void Bg2Shift(void) {
     g_bg2_dx = 0;
     return;
   }
-  // An enemy that draws its body in BG2 (Kraid, Draygon) moves it with BG1 and its own sprites: no parallax to restore, or
-  // the body slides away from the arms and hands (Draygon: the lean changes as Samus climbs).
-  if (g_rtl_enemy_bg2_room == room_ptr && (room_ptr == 0xA59F || room_ptr == 0xDA60)) {   // Kraid's and Draygon's rooms
+  // An enemy that draws its body in BG2 (Kraid, Draygon, Mother Brain) moves it with BG1 and its own sprites: no parallax to
+  // restore, or the body slides away from the arms and hands (Draygon: the lean changes as Samus climbs; Mother Brain: the
+  // torso apart from her head and legs).
+  if (g_rtl_enemy_bg2_room == room_ptr && (room_ptr == 0xA59F || room_ptr == 0xDA60 || room_ptr == 0xDD58)) {   // Kraid's, Draygon's and Mother Brain's rooms
     g_bg2_dx = 0;
     return;
   }
@@ -635,6 +636,17 @@ bool SmWide_Mode7(void) { return g_mode7; }
 // y 409, camera 138, picture's top at row 206; the same for x: 62 columns left of her, 512 between copies). Only that
 // copy is drawn: screen columns [x0, x1), output rows [y0, y1).
 bool SmWide_Bg2Clip(int *x0, int *x1, int *y0, int *y1) {
+  // Mother Brain's torso (phases 2 and 3, once the room's BG2 is hers: layer2_scroll_x 257) is a picture of ~14 x 11 tiles at
+  // the top left of BG2's tilemap, which repeats every 256 columns: with her at the far left a second torso showed in the
+  // right margin. The game scrolls it with BG2HOFS = 34 - her x (MotherBrain_MoveBodyDown): the picture's left edge is at
+  // -BG2HOFS.
+  if (room_ptr == 0xDD58 && g_rtl_enemy_bg2_room == room_ptr && layer2_scroll_x == 257) {
+    *x0 = -(int16)reg_BG2HOFS;
+    *x1 = *x0 + 200;   // the picture is ~112 wide; less than the 256 between copies
+    *y0 = -4096;       // copies above and below are never in view
+    *y1 = 4096;
+    return true;
+  }
   if (room_ptr != 0xDA60 || enemy_gfx_drawn_hook.bank != 165 || enemy_gfx_drawn_hook.addr != FUNC16(Draygon_Func_36))
     return false;
   const Enemy_Draygon *E = Get_Draygon(0);
