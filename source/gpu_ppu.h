@@ -234,6 +234,20 @@ void GpuPpu_SetPlaneRule(int (*rule)(int layer, int prio));
 // NULL = none.
 void GpuPpu_SetSlotPlanes(int (*slot_planes)(int layer, int tw, int th, uint8_t *grid));
 
+// Mode 7 cells that go to another stereo plane than the plane's own (source/sm_m7_planes.inc): the hook returns the
+// StereoPlane of cell `cell` (0..16383, row-major 128 x 128) showing tile `tile` (0..255), or -1 to keep the plane's; it
+// is asked when the cell is decoded. `key` names the hook's current rules (the room): when it changes every cell is
+// decoded again. Cells sent to a plane are decoded into a 1024x1024 texture of that plane (at most two planes; more go to
+// the plane's own) and left transparent in the others, drawn with the same rows and carrying the plane in
+// GpuQuad.plane. NULL = none. `base_plane` is the plane's own (where the cells the hook leaves go). In a texture of a
+// plane farther than a cell's, that cell shows the nearest cell on that plane above it, else below it, at most
+// `fill_reach` cells away (0 = none); `fill_mode` (NULL = always so) may say 1 for the nearest in its row instead, or -1
+// for no fill: what the other eye sees
+// beside a nearer cell, which has no picture of its own behind it. Only under the cell's own pixels, so the picture
+// without 3D does not change.
+void GpuPpu_SetMode7Planes(int (*cell_plane)(int cell, int tile), int key, int base_plane, int fill_reach,
+                           int (*fill_mode)(int cell));
+
 // Sprites do not wrap from the bottom to the top (SM's WIDE view: its HUD rows show
 // sprites, which on the SNES never showed there).
 void GpuPpu_SetNoSpriteWrap(bool no_wrap);

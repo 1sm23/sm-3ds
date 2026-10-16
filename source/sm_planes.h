@@ -3,6 +3,7 @@
 // tags its quads with it; StereoDepth_Plane leaves those quads alone.
 #pragma once
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include "stereo_depth.h"
@@ -14,6 +15,19 @@ int SmPlanes_LayerRule(int layer, int prio);
 
 // The highest OAM priority the current room draws its sprites with (sm_sprite_prio.inc): 3 = no cap.
 int SmPlanes_SpriteCap(void);
+
+// The plane (a StereoPlane) Mode 7 cell `cell` (row-major 128 x 128) showing tile `tile` goes to in the current room
+// (source/sm_m7_planes.inc), or -1 to keep the Mode 7 plane's; SmPlanes_Mode7Key names the room's rules (0 = none).
+// Suit GpuPpu_SetMode7Planes.
+int SmPlanes_Mode7CellPlane(int cell, int tile);
+int SmPlanes_Mode7Key(void);
+// The Mode 7 plane's own plane in the current room (its SM_LAYER_PLANE, or PLAY).
+int SmPlanes_Mode7BasePlane(void);
+// How many cells away a farther plane may fill behind a nearer cell (SM_M7_FILL), 0 = no fill.
+int SmPlanes_Mode7FillReach(void);
+// Where the fill behind Mode 7 cell `cell` comes from: 0 its column, 1 its row (SM_M7_FILL_ACROSS), -1 none
+// (SM_M7_NO_FILL). Suits GpuPpu_SetMode7Planes.
+int SmPlanes_Mode7FillMode(int cell);
 
 // Whether the current room has any rule or tile fix (to leave the renderer's hooks off elsewhere).
 int SmPlanes_RoomHasRules(void);

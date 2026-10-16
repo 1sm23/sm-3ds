@@ -63,6 +63,73 @@ static const SpriteCap kSpriteCaps[] = {
 };
 #undef SM_SPRITE_CAP
 
+typedef struct { uint16_t room; uint8_t first, last, plane, kind, y0, y1; } M7Rule;   // kind: 0 tiles, 1 solid, 2 fill, 3 across, 4 cells, 5 no fill
+#define SM_M7_TILES(room, first, last, plane) { room, first, last, plane, 0, 0, 0 },
+#define SM_M7_SOLID(room, plane) { room, 0, 0, plane, 1, 0, 0 },
+#define SM_M7_FILL(room, reach) { room, 0, 0, reach, 2, 0, 0 },
+#define SM_M7_FILL_ACROSS(room, x0, y0, x1, y1) { room, x0, x1, 0, 3, y0, y1 },
+#define SM_M7_CELLS(room, x0, y0, x1, y1, plane) { room, x0, x1, plane, 4, y0, y1 },
+#define SM_M7_NO_FILL(room, x0, y0, x1, y1) { room, x0, x1, 0, 5, y0, y1 },
+static const M7Rule kM7Rules[] = {
+#include "sm_m7_planes.inc"
+  { 0, 0, 0, 0, 0, 0, 0 }
+};
+#undef SM_M7_TILES
+#undef SM_M7_SOLID
+#undef SM_M7_FILL
+#undef SM_M7_FILL_ACROSS
+#undef SM_M7_CELLS
+#undef SM_M7_NO_FILL
+
+int SmPlanes_Mode7Key(void) {
+  for (int i = 0; kM7Rules[i].room; i++)
+    if (kM7Rules[i].room == room_ptr) return room_ptr;
+  return 0;
+}
+
+int SmPlanes_Mode7BasePlane(void) {
+  const int p = SmPlanes_LayerRule(5, 0);
+  return p >= 0 ? p : kStereoPlay;   // StereoDepth_Plane's for Mode 7
+}
+
+int SmPlanes_Mode7FillReach(void) {
+  for (int i = 0; kM7Rules[i].room; i++)
+    if (kM7Rules[i].room == room_ptr && kM7Rules[i].kind == 2) return kM7Rules[i].plane;
+  return 0;
+}
+
+int SmPlanes_Mode7FillMode(int cell) {
+  const int cx = cell & 127, cy = cell >> 7;
+  for (int i = 0; kM7Rules[i].room; i++) {   // the first area that holds the cell, in file order
+    const M7Rule *r = &kM7Rules[i];
+    if (r->room == room_ptr && (r->kind == 3 || r->kind == 5) && cx >= r->first && cx <= r->last && cy >= r->y0 &&
+        cy <= r->y1)
+      return r->kind == 3 ? 1 : -1;
+  }
+  return 0;
+}
+
+int SmPlanes_Mode7CellPlane(int cell, int tile) {
+  const uint16_t room = room_ptr;
+  const int cx = cell & 127, cy = cell >> 7;
+  for (int i = 0; kM7Rules[i].room; i++) {   // cell rules first, then tile rules, in file order
+    const M7Rule *r = &kM7Rules[i];
+    if (r->room == room && r->kind == 4 && cx >= r->first && cx <= r->last && cy >= r->y0 && cy <= r->y1) return r->plane;
+  }
+  for (int i = 0; kM7Rules[i].room; i++) {
+    const M7Rule *r = &kM7Rules[i];
+    if (r->room == room && r->kind == 0 && tile >= r->first && tile <= r->last) return r->plane;
+  }
+  for (int i = 0; kM7Rules[i].room; i++) {
+    const M7Rule *r = &kM7Rules[i];
+    if (r->room != room || r->kind != 1) continue;
+    // The plane drawn 1:1 with the room (the Ceres shaft): cell (cx, cy) lies on block (cx / 2, cy / 2).
+    const int bx = (cell & 127) >> 1, by = cell >> 8, w = room_width_in_blocks, h = room_height_in_blocks;
+    if (bx < w && by < h && (level_data[by * w + bx] >> 12) == 8) return r->plane;
+  }
+  return -1;
+}
+
 int SmPlanes_SpriteCap(void) {
   for (int i = 0; kSpriteCaps[i].room; i++)
     if (kSpriteCaps[i].room == room_ptr) return kSpriteCaps[i].cap;

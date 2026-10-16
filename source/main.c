@@ -1047,6 +1047,8 @@ int main(int argc, char** argv) {
         const bool by_hand = SmWide_Gameplay() && SmPlanes_RoomHasRules();
         GpuPpu_SetPlaneRule(by_hand ? SmPlanes_LayerRule : NULL);
         GpuPpu_SetSlotPlanes(by_hand ? SmPlanes_SlotPlanes : NULL);
+        GpuPpu_SetMode7Planes(SmWide_Gameplay() && SmPlanes_Mode7Key() ? SmPlanes_Mode7CellPlane : NULL, SmPlanes_Mode7Key(),
+                        SmPlanes_Mode7BasePlane(), SmPlanes_Mode7FillReach(), SmPlanes_Mode7FillMode);
         GpuPpu_SetSpriteCap(SmWide_Gameplay() ? SmPlanes_SpriteCap() : 3);
         static bool was_by_hand;
         if (by_hand != was_by_hand) {   // for the debug log: a room that has planes set by hand
