@@ -24,8 +24,8 @@ and 0 for Release ones, so stable CIAs have none of this.
 |---|---|
 | MAP | Tap a cell to pick a room, WARP HERE loads it (DOOR n/m picks which door into it). See the decisions log for how the warp works. |
 | STATUS | Tap an item or beam to add/remove it; ALL (the free cell after the items) gives every item and beam, and lights up when they are all there. GOD = energy refilled every frame. MAX = capacities to the maximum and ammo kept full; off gives the old capacities back. MAP STATIONS boxes: each tap cycles real -> map station used (all cells show) -> every cell explored -> real (restored exactly). Unlocking a map is what makes its rooms visible for a warp. |
-| DEBUG | Timings, game state, raw boss bits, and the DEBUG TOOLS window. |
 | STATES | 10 save-state slots (all builds). |
+| DEBUG | Timings, game state, raw boss bits, and the DEBUG TOOLS window. |
 
 DEBUG TOOLS window: SCREEN DUMP, FRAME DUMP, LOG TO SD (below), LOG MARK, SCENE REC
 (below), PERF RECORDER, RENDERER

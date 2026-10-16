@@ -189,12 +189,12 @@ static int VisibleTabs(Tab out[TAB_COUNT]) {
   int n = 0;
   out[n++] = TAB_MAP;
   out[n++] = TAB_STATUS;
-#if DEBUG_TOOLS
-  out[n++] = TAB_DEBUG;
-#endif
   out[n++] = TAB_STATES;
   out[n++] = TAB_ACHIEVEMENTS;
   out[n++] = TAB_OPTIONS;
+#if DEBUG_TOOLS
+  out[n++] = TAB_DEBUG;
+#endif
   return n;
 }
 
