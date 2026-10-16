@@ -1614,6 +1614,19 @@ static void SynthHudLine(PpuLineState *dst, const PpuLineState *hud, const PpuLi
   dst->brightness = hud->brightness;
 }
 
+// The extra rows above the HUD's band carry the FX layer on (ExtendBand), but SM keeps the HUD in the first 4 rows
+// of the FX layer's own tilemap: when the layer's scroll puts those rows just above the first line, the extension
+// would draw the HUD again at the top (energy, ammo and map repeated in the first row).
+static bool FxAboveReadsHud(const PpuLineCapture *cap, const PpuLineCapture *orig) {
+  if (!g_hud_synth) return false;
+  const BgLayer *fx = &cap->line[1].bgLayer[2], *hb = &orig->line[1].bgLayer[2];
+  if (fx->tilemapAdr != hb->tilemapAdr) return false;
+  const int map_rows = fx->tilemapHigher ? 64 : 32;
+  for (int r = 1 - g_extra_top; r <= 0; r++)   // the lines above line 1, which the extension repeats
+    if ((((r + fx->vScroll) >> 3) & (map_rows - 1)) < 4) return true;
+  return false;
+}
+
 bool GpuPpu_BuildFrame(const Ppu *ppu, const PpuLineCapture *cap, GpuFrame *out, const char **reason) {
   static LineInfo info[kPpuCaptureLines];
   // The lines drawn: the capture's, or a copy changed where the HUD and extra rows need it.
@@ -1719,7 +1732,7 @@ bool GpuPpu_BuildFrame(const Ppu *ppu, const PpuLineCapture *cap, GpuFrame *out,
           (*reason = EmitScreen(ppu, cap, inf->sub, l0, l1, false, &sprites_built))) { ok = false; break; }
       b->sub_count = out->quad_count - b->sub_first;
       const bool hud = NarrowBg3(cap, l0, l1);
-      if (l0 == 1 && g_extra_top) ExtendBand(out, b, true, g_extra_top, hud);
+      if (l0 == 1 && g_extra_top) ExtendBand(out, b, true, g_extra_top, hud || FxAboveReadsHud(cap, orig));
     }
     if (l0 == 1) b->y0 = -g_extra_top;
     l0 = l1 + 1;
