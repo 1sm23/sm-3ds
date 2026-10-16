@@ -283,6 +283,14 @@ static float TicksToMs(u64 ticks) {
   return (float)((double)ticks * 1000.0 / SYSCLOCK_ARM11);
 }
 
+// gfxFlushBuffers without GSP (see FlushCache in gpu_ppu_3ds.c: the GSP request waits for core 1), and only
+// for the screens about to be swapped.
+static void FlushScreen(gfxScreen_t screen, gfx3dSide_t side) {
+  u16 w, h;
+  u8 *fb = gfxGetFramebuffer(screen, side, &w, &h);
+  svcFlushProcessDataCache(CUR_PROCESS_HANDLE, (u32)fb, (u32)w * h * gspGetBytesPerPixel(gfxGetScreenFormat(screen)));
+}
+
 // Scene recorder: one shown frame, with what the game was doing.
 static void RecordTop(const uint32_t *top, uint32_t frame, u64 t_logic, u64 t_draw) {
   if (!top) return;
@@ -1133,7 +1141,9 @@ int main(int argc, char** argv) {
       t1 = svcGetSystemTick();
       UiDraw_Present(GFX_TOP, gfxIs3D());
       UiDraw_Present(GFX_BOTTOM, false);
-      gfxFlushBuffers();
+      FlushScreen(GFX_TOP, GFX_LEFT);
+      if (gfxIs3D()) FlushScreen(GFX_TOP, GFX_RIGHT);
+      FlushScreen(GFX_BOTTOM, GFX_LEFT);
       gfxSwapBuffers();
       UiDraw_Swapped();
       t_pres = svcGetSystemTick() - t1;
@@ -1154,7 +1164,7 @@ int main(int argc, char** argv) {
         Rect part;
         if (BottomUi_PresentRect(&part)) UiDraw_PresentRect(GFX_BOTTOM, part);   // a clock or a blinking mark
         else UiDraw_Present(GFX_BOTTOM, false);
-        gfxFlushBuffers();
+        FlushScreen(GFX_BOTTOM, GFX_LEFT);
         gfxScreenSwapBuffers(GFX_BOTTOM, false);
         UiDraw_Swapped();
         t_pres = svcGetSystemTick() - t1;
