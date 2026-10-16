@@ -647,6 +647,15 @@ bool SmWide_Bg2Clip(int *x0, int *x1, int *y0, int *y1) {
     *y1 = 4096;
     return true;
   }
+  // Crocomire's body is BG2 too. While she is more than 128 columns beyond either screen edge the game parks it by
+  // scrolling BG2 to 256 (Crocomire_8BA4): off the 256-column view, but the tilemap repeats and the right margin showed it
+  // fixed on the screen however far Samus walked away from her.
+  if (room_ptr == 0xA98D && g_rtl_enemy_bg2_room == room_ptr && reg_BG2HOFS == 256) {
+    *x0 = *x1 = 0;
+    *y0 = -4096;
+    *y1 = 4096;
+    return true;
+  }
   if (room_ptr != 0xDA60 || enemy_gfx_drawn_hook.bank != 165 || enemy_gfx_drawn_hook.addr != FUNC16(Draygon_Func_36))
     return false;
   const Enemy_Draygon *E = Get_Draygon(0);
