@@ -2297,6 +2297,16 @@ SM_PLANE_FIX(0xA98D, 1, 103, 11, 0x810A, 0xF, kStereoPlay)  /* -> PLAY */
 SM_PLANE_FIX(0xA98D, 1, 104, 11, 0x810A, 0xF, kStereoPlay)  /* -> PLAY */
 SM_PLANE_FIX(0xA98D, 1, 105, 11, 0x810A, 0xF, kStereoPlay)  /* -> PLAY */
 SM_PLANE_FIX(0xA98D, 1, 106, 11, 0x810A, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 97, 11, 0x810B, 0xF, kStereoPlay)  /* -> PLAY, the broken brick */
+SM_PLANE_FIX(0xA98D, 1, 98, 11, 0x810B, 0xF, kStereoPlay)  /* -> PLAY, the broken brick */
+SM_PLANE_FIX(0xA98D, 1, 99, 11, 0x810B, 0xF, kStereoPlay)  /* -> PLAY, the broken brick */
+SM_PLANE_FIX(0xA98D, 1, 100, 11, 0x810B, 0xF, kStereoPlay)  /* -> PLAY, the broken brick */
+SM_PLANE_FIX(0xA98D, 1, 101, 11, 0x810B, 0xF, kStereoPlay)  /* -> PLAY, the broken brick */
+SM_PLANE_FIX(0xA98D, 1, 102, 11, 0x810B, 0xF, kStereoPlay)  /* -> PLAY, the broken brick */
+SM_PLANE_FIX(0xA98D, 1, 103, 11, 0x810B, 0xF, kStereoPlay)  /* -> PLAY, the broken brick */
+SM_PLANE_FIX(0xA98D, 1, 104, 11, 0x810B, 0xF, kStereoPlay)  /* -> PLAY, the broken brick */
+SM_PLANE_FIX(0xA98D, 1, 105, 11, 0x810B, 0xF, kStereoPlay)  /* -> PLAY, the broken brick */
+SM_PLANE_FIX(0xA98D, 1, 106, 11, 0x810B, 0xF, kStereoPlay)  /* -> PLAY, the broken brick */
 SM_PLANE_FIX(0xA98D, 1, 93, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
 SM_PLANE_FIX(0xA98D, 1, 94, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
 SM_PLANE_FIX(0xA98D, 1, 95, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
