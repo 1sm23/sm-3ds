@@ -2287,6 +2287,57 @@ SM_PLANE_FIX(0xA7DE, 1, 12, 31, 0x8044, 0xF, kStereoPlay)  /* -> PLAY */
 SM_PLANE_FIX(0xA7DE, 1, 13, 31, 0x8044, 0xF, kStereoPlay)  /* -> PLAY */
 SM_PLANE_FIX(0xA7DE, 1, 14, 31, 0x8044, 0xF, kStereoPlay)  /* -> PLAY */
 SM_PLANE_FIX(0xA7DE, 1, 15, 31, 0x8044, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 97, 11, 0x810A, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 98, 11, 0x810A, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 99, 11, 0x810A, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 100, 11, 0x810A, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 101, 11, 0x810A, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 102, 11, 0x810A, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 103, 11, 0x810A, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 104, 11, 0x810A, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 105, 11, 0x810A, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 106, 11, 0x810A, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 97, 11, 0x810B, 0xF, kStereoPlay)  /* -> PLAY, the broken brick */
+SM_PLANE_FIX(0xA98D, 1, 98, 11, 0x810B, 0xF, kStereoPlay)  /* -> PLAY, the broken brick */
+SM_PLANE_FIX(0xA98D, 1, 99, 11, 0x810B, 0xF, kStereoPlay)  /* -> PLAY, the broken brick */
+SM_PLANE_FIX(0xA98D, 1, 100, 11, 0x810B, 0xF, kStereoPlay)  /* -> PLAY, the broken brick */
+SM_PLANE_FIX(0xA98D, 1, 101, 11, 0x810B, 0xF, kStereoPlay)  /* -> PLAY, the broken brick */
+SM_PLANE_FIX(0xA98D, 1, 102, 11, 0x810B, 0xF, kStereoPlay)  /* -> PLAY, the broken brick */
+SM_PLANE_FIX(0xA98D, 1, 103, 11, 0x810B, 0xF, kStereoPlay)  /* -> PLAY, the broken brick */
+SM_PLANE_FIX(0xA98D, 1, 104, 11, 0x810B, 0xF, kStereoPlay)  /* -> PLAY, the broken brick */
+SM_PLANE_FIX(0xA98D, 1, 105, 11, 0x810B, 0xF, kStereoPlay)  /* -> PLAY, the broken brick */
+SM_PLANE_FIX(0xA98D, 1, 106, 11, 0x810B, 0xF, kStereoPlay)  /* -> PLAY, the broken brick */
+SM_PLANE_FIX(0xA98D, 1, 93, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 94, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 95, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 96, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 97, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 98, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 99, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 100, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 101, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 102, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 103, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 104, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 105, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 106, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 107, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 108, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 109, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 110, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 111, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 112, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 113, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 114, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 115, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 116, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 117, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 118, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 119, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 120, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 121, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 122, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA98D, 1, 123, 15, 0x8080, 0xF, kStereoPlay)  /* -> PLAY */
 SM_PLANE_FIX(0xCD13, 1, 0, 0, 0x8303, 0xF, kStereoFront)  /* -> FRONT */
 SM_PLANE_FIX(0xCD13, 1, 1, 0, 0x8303, 0xF, kStereoFront)  /* -> FRONT */
 SM_PLANE_FIX(0xCD13, 1, 2, 0, 0x8303, 0xF, kStereoFront)  /* -> FRONT */
