@@ -1574,3 +1574,9 @@ Audio off on the 2DS (2026-10-03, WIDE on) changes little: A923 shown 44.3 (46.5
   The running 3dsx stays open as the romfs, so it cannot be renamed ("cannot move the old 3dsx" on the first try): the main
   thread closes the romfs before the swap, and romfs reads fall back to the SD card afterwards. The relaunch sets Rosalina's
   hb:ldr target to the file (SetTarget, SetArgv, as new-hbmenu's loader) and chainloads the host title.
+- 2026-10-16: the CIA's 30 % of core 1 (found with P4.20) came from `resources/template.rsf` as CharlesAverill shipped it:
+  `MaxCpu: 0x9E`. Luma's PM takes `MaxCpu & 0x7F` (= 30) as the most `APT_SetAppCpuTimeLimit` may ask and refuses more with
+  D8E05BF4 (module PM, "not implemented"); the 3dsx runs with the launcher host's own value and got 80 %. Now `MaxCpu: 0xD0`
+  (same multi mode, ceiling 80): the 2DS's CIA logs 80 % granted, audio blocks ~4 ms instead of ~12. `AffinityMask: 1 -> 3`
+  went in too (cores 0 and 1, as mzm 9eea72a9): it was tried first and changed nothing on its own, but the game does run
+  threads on core 1 (audio, FTP). mzm's rsf has the same `MaxCpu: 0x9E`.
