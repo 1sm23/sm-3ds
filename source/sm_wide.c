@@ -529,8 +529,10 @@ static void BeforePpuDraw(void) {
   SetLeanY(LeanY(g_room_still[1], g_room_still[3]));
   Bg2Shift();
   PublishView();
+  // Every column, the game's own too: with WIDE on, the columns the game keeps up to date were left stale
+  // (a black column behind Samus in C98E, a BG2 pillar drawn ahead of her), so the fill owns them all.
   FillLayer(ppu, level_data, reg_BG1SC, reg_BG1HOFS, reg_BG1VOFS, bg1_x_offset + layer1_x_pos,
-            bg1_y_offset + layer1_y_pos, layer1_x_pos, layer1_y_pos, false);
+            bg1_y_offset + layer1_y_pos, layer1_x_pos, layer1_y_pos, true);
   // BG2 from the level's background data, when the game streams it like BG1 (otherwise it
   // is a fixed background already loaded whole), moved with the parallax shift: then the
   // game's columns are not where the view is, so every column is written.
@@ -539,7 +541,7 @@ static void BeforePpuDraw(void) {
   if (!(layer2_scroll_x & 1) && !(layer2_scroll_y & 1) && g_rtl_enemy_bg2_room != room_ptr)
     FillLayer(ppu, custom_background, reg_BG2SC, reg_BG2HOFS + g_bg2_dx, reg_BG2VOFS,
               bg2_x_scroll + layer2_x_pos + g_bg2_dx, bg2_y_scroll + layer2_y_pos, layer2_x_pos + g_bg2_dx,
-              layer2_y_pos, g_bg2_dx != 0);
+              layer2_y_pos, true);
   XrayMargins(ppu);
   if (g_rtl_wide_hud_over_room) HudSeeThrough(ppu);
   g_filled = true;
