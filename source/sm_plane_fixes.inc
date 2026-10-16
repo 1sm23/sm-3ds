@@ -2287,6 +2287,142 @@ SM_PLANE_FIX(0xA7DE, 1, 12, 31, 0x8044, 0xF, kStereoPlay)  /* -> PLAY */
 SM_PLANE_FIX(0xA7DE, 1, 13, 31, 0x8044, 0xF, kStereoPlay)  /* -> PLAY */
 SM_PLANE_FIX(0xA7DE, 1, 14, 31, 0x8044, 0xF, kStereoPlay)  /* -> PLAY */
 SM_PLANE_FIX(0xA7DE, 1, 15, 31, 0x8044, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xCD13, 1, 0, 0, 0x8303, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 1, 0, 0x8303, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 2, 0, 0x8303, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 3, 0, 0x8303, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 4, 0, 0x8303, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 5, 0, 0x8303, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 6, 0, 0x8303, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 7, 0, 0x8303, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 8, 0, 0x8303, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 9, 0, 0x8303, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 10, 0, 0x8303, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 11, 0, 0x8303, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 12, 0, 0x8303, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 13, 0, 0x8303, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 14, 0, 0x8303, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 15, 0, 0x8303, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 0, 1, 0x8323, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 1, 1, 0x8323, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 2, 1, 0x8323, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 3, 1, 0x8323, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 4, 1, 0x8323, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 5, 1, 0x8323, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 6, 1, 0x8323, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 7, 1, 0x8323, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 8, 1, 0x8323, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 9, 1, 0x8323, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 10, 1, 0x8323, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 11, 1, 0x8323, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 12, 1, 0x8323, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 13, 1, 0x8323, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 14, 1, 0x8323, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 15, 1, 0x8323, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 0, 2, 0x8300, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 1, 2, 0x8320, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 2, 2, 0x8306, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 3, 2, 0x8706, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 4, 2, 0x8322, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 5, 2, 0x8300, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 6, 2, 0x8320, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 7, 2, 0x8306, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 8, 2, 0x8706, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 9, 2, 0x8322, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 10, 2, 0x8300, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 11, 2, 0x8320, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 12, 2, 0x8306, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 13, 2, 0x8706, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 14, 2, 0x8322, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 15, 2, 0x8300, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 0, 3, 0x8301, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 1, 3, 0x8302, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 14, 3, 0x8702, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 15, 3, 0x8301, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 0, 4, 0x8300, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 1, 4, 0x8302, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 14, 4, 0x8702, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 15, 4, 0x8300, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 0, 5, 0x8320, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 1, 5, 0x8326, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 14, 5, 0x8326, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 15, 5, 0x8322, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 0, 6, 0x9440, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 1, 6, 0xC4AE, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 14, 6, 0x8326, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 15, 6, 0x8322, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 0, 7, 0x9460, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 1, 7, 0xD4CE, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 14, 7, 0x8326, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 15, 7, 0x8322, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 0, 8, 0x9C60, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 1, 8, 0xDCCE, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 14, 8, 0x8326, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 15, 8, 0x8322, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 0, 9, 0x9C40, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 1, 9, 0xDCAE, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 14, 9, 0x8326, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 15, 9, 0x8322, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 0, 10, 0x8320, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 1, 10, 0x8326, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 14, 10, 0x8326, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 15, 10, 0x8322, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 0, 11, 0x8300, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 1, 11, 0x8302, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 14, 11, 0x8702, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 15, 11, 0x8300, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 0, 12, 0x8301, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 1, 12, 0x8302, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 14, 12, 0x8702, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 15, 12, 0x8301, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 0, 13, 0x8705, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 1, 13, 0x8305, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 2, 13, 0x8705, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 3, 13, 0x8305, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 4, 13, 0x8705, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 5, 13, 0x8305, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 6, 13, 0x8705, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 7, 13, 0x8305, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 8, 13, 0x8705, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 9, 13, 0x8305, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 10, 13, 0x8705, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 11, 13, 0x8305, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 12, 13, 0x8705, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 13, 13, 0x8305, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 14, 13, 0x8705, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 15, 13, 0x8305, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 0, 14, 0x853C, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 1, 14, 0x813C, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 2, 14, 0x853C, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 3, 14, 0x813C, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 4, 14, 0x853C, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 5, 14, 0x813C, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 6, 14, 0x853C, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 7, 14, 0x813C, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 8, 14, 0x853C, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 9, 14, 0x813C, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 10, 14, 0x853C, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 11, 14, 0x813C, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 12, 14, 0x853C, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 13, 14, 0x813C, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 14, 14, 0x853C, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 15, 14, 0x813C, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 0, 15, 0x853C, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 1, 15, 0x813C, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 2, 15, 0x853C, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 3, 15, 0x813C, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 4, 15, 0x853C, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 5, 15, 0x813C, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 6, 15, 0x853C, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 7, 15, 0x813C, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 8, 15, 0x853C, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 9, 15, 0x813C, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 10, 15, 0x853C, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 11, 15, 0x813C, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 12, 15, 0x853C, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 13, 15, 0x813C, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 14, 15, 0x853C, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 15, 15, 0x813C, 0xF, kStereoFront)  /* -> FRONT */
 SM_PLANE_FIX(0xD30B, 1, 0, 0, 0x8044, 0xF, kStereoPlay)  /* -> PLAY */
 SM_PLANE_FIX(0xD30B, 1, 1, 0, 0x8044, 0xF, kStereoPlay)  /* -> PLAY */
 SM_PLANE_FIX(0xD30B, 1, 2, 0, 0x8044, 0xF, kStereoPlay)  /* -> PLAY */
@@ -3849,6 +3985,94 @@ SM_TILE_PRIO(0xA6A1, 1, 29, 21, 0x81AA, 0xF, 1)  /* drawn with priority 1 */
 SM_TILE_PRIO(0xA6A1, 1, 30, 21, 0x81AA, 0xF, 1)  /* drawn with priority 1 */
 SM_TILE_PRIO(0xA6A1, 1, 31, 21, 0x81AA, 0xF, 1)  /* drawn with priority 1 */
 SM_TILE_PRIO(0xA6A1, 1, 32, 21, 0x81AA, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 0, 0, 0x8303, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 1, 0, 0x8303, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 2, 0, 0x8303, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 3, 0, 0x8303, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 4, 0, 0x8303, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 5, 0, 0x8303, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 6, 0, 0x8303, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 7, 0, 0x8303, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 8, 0, 0x8303, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 9, 0, 0x8303, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 10, 0, 0x8303, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 11, 0, 0x8303, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 12, 0, 0x8303, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 13, 0, 0x8303, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 14, 0, 0x8303, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 15, 0, 0x8303, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 0, 1, 0x8323, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 1, 1, 0x8323, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 2, 1, 0x8323, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 3, 1, 0x8323, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 4, 1, 0x8323, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 5, 1, 0x8323, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 6, 1, 0x8323, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 7, 1, 0x8323, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 8, 1, 0x8323, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 9, 1, 0x8323, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 10, 1, 0x8323, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 11, 1, 0x8323, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 12, 1, 0x8323, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 13, 1, 0x8323, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 14, 1, 0x8323, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 15, 1, 0x8323, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 0, 2, 0x8300, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 1, 2, 0x8320, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 2, 2, 0x8306, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 3, 2, 0x8706, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 4, 2, 0x8322, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 5, 2, 0x8300, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 6, 2, 0x8320, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 7, 2, 0x8306, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 8, 2, 0x8706, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 9, 2, 0x8322, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 10, 2, 0x8300, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 11, 2, 0x8320, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 12, 2, 0x8306, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 13, 2, 0x8706, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 14, 2, 0x8322, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 15, 2, 0x8300, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 0, 3, 0x8301, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 1, 3, 0x8302, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 14, 3, 0x8702, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 15, 3, 0x8301, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 0, 4, 0x8300, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 1, 4, 0x8302, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 14, 4, 0x8702, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 15, 4, 0x8300, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 0, 5, 0x8320, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 1, 5, 0x8326, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 14, 5, 0x8326, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 15, 5, 0x8322, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 0, 6, 0x9440, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 1, 6, 0xC4AE, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 14, 6, 0x8326, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 15, 6, 0x8322, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 0, 7, 0x9460, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 1, 7, 0xD4CE, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 14, 7, 0x8326, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 15, 7, 0x8322, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 0, 8, 0x9C60, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 1, 8, 0xDCCE, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 14, 8, 0x8326, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 15, 8, 0x8322, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 0, 9, 0x9C40, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 1, 9, 0xDCAE, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 14, 9, 0x8326, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 15, 9, 0x8322, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 0, 10, 0x8320, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 1, 10, 0x8326, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 14, 10, 0x8326, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 15, 10, 0x8322, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 0, 11, 0x8300, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 1, 11, 0x8302, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 14, 11, 0x8702, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 15, 11, 0x8300, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 0, 12, 0x8301, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 1, 12, 0x8302, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 14, 12, 0x8702, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 15, 12, 0x8301, 0xF, 1)  /* drawn with priority 1 */
 SM_LAYER_PLANE(0xDF45, 4, 2, kStereoFront)  /* -> FRONT */
 SM_LAYER_PLANE(0xE0B5, 2, 0, kStereoPlay)  /* -> PLAY */
 SM_LAYER_PLANE(0xE0B5, 2, 1, kStereoPlay)  /* -> PLAY */
