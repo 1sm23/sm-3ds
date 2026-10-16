@@ -4089,6 +4089,7 @@ SM_TILE_PRIO(0xCD13, 1, 12, 13, 0x8705, 0xF, 1)  /* drawn with priority 1 */
 SM_TILE_PRIO(0xCD13, 1, 13, 13, 0x8305, 0xF, 1)  /* drawn with priority 1 */
 SM_TILE_PRIO(0xCD13, 1, 14, 13, 0x8705, 0xF, 1)  /* drawn with priority 1 */
 SM_TILE_PRIO(0xCD13, 1, 15, 13, 0x8305, 0xF, 1)  /* drawn with priority 1 */
+SM_LAYER_PLANE(0xCD13, 1, 1, kStereoFront)  /* -> FRONT */
 SM_LAYER_PLANE(0xDF45, 4, 2, kStereoFront)  /* -> FRONT */
 SM_LAYER_PLANE(0xE0B5, 2, 0, kStereoPlay)  /* -> PLAY */
 SM_LAYER_PLANE(0xE0B5, 2, 1, kStereoPlay)  /* -> PLAY */

@@ -13,6 +13,7 @@ static bool g_m7_under_hud;
 
 void GpuPpu_SetMode7UnderHud(bool on) { g_m7_under_hud = on; }
 static bool g_no_sprite_wrap;
+static int g_sprite_cap = 3;   // GpuPpu_SetSpriteCap
 
 void GpuPpu_SetNoSpriteWrap(bool no_wrap) { g_no_sprite_wrap = no_wrap; }
 const int16_t *g_gpu_ppu_obj_x, *g_gpu_ppu_obj_y;
@@ -1009,7 +1010,8 @@ static const char *BuildSprites(const Ppu *ppu, const PpuLineState *st) {
     sp->size = size;
     sp->x = x;
     sp->y = y;
-    sp->level = (uint8_t)(((attr >> 12) & 3) * 4 + 2);
+    const int prio = (attr >> 12) & 3;
+    sp->level = (uint8_t)((!hud && prio > g_sprite_cap ? g_sprite_cap : prio) * 4 + 2);
     sp->hflip = attr & 0x4000;
     sp->vflip = attr & 0x8000;
     sp->no_wrap = no_wrap;
@@ -1134,6 +1136,7 @@ static bool EmitHudSprite(const Sprite *sp, int y0, int y1) {
 static bool g_sprite_priority_order;
 // The 3D is on (gameplay): sprites are emitted by priority first, OAM order within one (EmitSprites).
 void GpuPpu_SetSpritePriorityOrder(bool on) { g_sprite_priority_order = on; }
+void GpuPpu_SetSpriteCap(int cap) { g_sprite_cap = cap < 0 ? 0 : cap > 3 ? 3 : cap; }
 
 static bool EmitSprites(int y0, int y1, bool main) {
   // The HUD list is drawn in order, the last quad on top; among sprites the first wins.

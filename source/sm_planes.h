@@ -12,6 +12,9 @@
 // priority bit. Suits GpuPpu_SetPlaneRule.
 int SmPlanes_LayerRule(int layer, int prio);
 
+// The highest OAM priority the current room draws its sprites with (sm_sprite_prio.inc): 3 = no cap.
+int SmPlanes_SpriteCap(void);
+
 // Whether the current room has any rule or tile fix (to leave the renderer's hooks off elsewhere).
 int SmPlanes_RoomHasRules(void);
 
