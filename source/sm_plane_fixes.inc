@@ -1589,6 +1589,76 @@ SM_PLANE_FIX(0xA322, 1, 12, 31, 0x8044, 0xF, kStereoPlay)  /* -> PLAY */
 SM_PLANE_FIX(0xA322, 1, 13, 31, 0x8044, 0xF, kStereoPlay)  /* -> PLAY */
 SM_PLANE_FIX(0xA322, 1, 14, 31, 0x8044, 0xF, kStereoPlay)  /* -> PLAY */
 SM_PLANE_FIX(0xA322, 1, 15, 31, 0x8044, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 26, 52, 0x8194, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 27, 52, 0x8195, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 28, 52, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 29, 52, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 30, 52, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 31, 52, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 32, 52, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 33, 52, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 34, 52, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 35, 52, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 36, 52, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 37, 52, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 38, 52, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 39, 52, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 40, 52, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 41, 52, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 42, 52, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 43, 52, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 44, 52, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 45, 52, 0x8197, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 46, 52, 0x8194, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 26, 53, 0x8194, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 37, 53, 0x8193, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 46, 53, 0x8194, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 47, 53, 0x8194, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 16, 54, 0x8195, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 17, 54, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 18, 54, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 19, 54, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 20, 54, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 21, 54, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 22, 54, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 23, 54, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 24, 54, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 25, 54, 0x8197, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 26, 54, 0x8194, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 16, 56, 0x8195, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 17, 56, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 18, 56, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 19, 56, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 20, 56, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 21, 56, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 22, 56, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 23, 56, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 24, 56, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 25, 56, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 26, 56, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 27, 56, 0x8197, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 28, 56, 0x8194, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 28, 57, 0x8194, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 28, 58, 0x8194, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 29, 58, 0x8195, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 30, 58, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 31, 58, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 32, 58, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 33, 58, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 34, 58, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 35, 58, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 36, 58, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 37, 58, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 38, 58, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 39, 58, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 40, 58, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 41, 58, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 42, 58, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 43, 58, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 44, 58, 0x8196, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 45, 58, 0x8197, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 46, 58, 0x8194, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xA322, 1, 47, 58, 0x8194, 0xF, kStereoPlay)  /* -> PLAY */
 SM_PLANE_FIX(0xA322, 2, 5, 0, 0x0044, 0xA, kStereoPlay)  /* -> PLAY */
 SM_PLANE_FIX(0xA322, 2, 6, 0, 0x0044, 0x5, kStereoPlay)  /* -> PLAY */
 SM_PLANE_FIX(0xA322, 2, 9, 0, 0x0044, 0xA, kStereoPlay)  /* -> PLAY */
@@ -3966,6 +4036,76 @@ SM_TILE_PRIO(0xA011, 1, 72, 29, 0x25E6, 0xF, 1)  /* drawn with priority 1 */
 SM_TILE_PRIO(0xA011, 1, 73, 29, 0x25E5, 0xF, 1)  /* drawn with priority 1 */
 SM_TILE_PRIO(0xA011, 1, 74, 29, 0x25E6, 0xF, 1)  /* drawn with priority 1 */
 SM_TILE_PRIO(0xA011, 1, 75, 29, 0x25E5, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 26, 52, 0x8194, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 27, 52, 0x8195, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 28, 52, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 29, 52, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 30, 52, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 31, 52, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 32, 52, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 33, 52, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 34, 52, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 35, 52, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 36, 52, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 37, 52, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 38, 52, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 39, 52, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 40, 52, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 41, 52, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 42, 52, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 43, 52, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 44, 52, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 45, 52, 0x8197, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 46, 52, 0x8194, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 26, 53, 0x8194, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 37, 53, 0x8193, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 46, 53, 0x8194, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 47, 53, 0x8194, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 16, 54, 0x8195, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 17, 54, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 18, 54, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 19, 54, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 20, 54, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 21, 54, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 22, 54, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 23, 54, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 24, 54, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 25, 54, 0x8197, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 26, 54, 0x8194, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 16, 56, 0x8195, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 17, 56, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 18, 56, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 19, 56, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 20, 56, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 21, 56, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 22, 56, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 23, 56, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 24, 56, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 25, 56, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 26, 56, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 27, 56, 0x8197, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 28, 56, 0x8194, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 28, 57, 0x8194, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 28, 58, 0x8194, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 29, 58, 0x8195, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 30, 58, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 31, 58, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 32, 58, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 33, 58, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 34, 58, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 35, 58, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 36, 58, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 37, 58, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 38, 58, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 39, 58, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 40, 58, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 41, 58, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 42, 58, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 43, 58, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 44, 58, 0x8196, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 45, 58, 0x8197, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 46, 58, 0x8194, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xA322, 1, 47, 58, 0x8194, 0xF, 1)  /* drawn with priority 1 */
 SM_TILE_PRIO(0xA59F, 1, 5, 27, 0x2160, 0xF, 1)  /* drawn with priority 1 */
 SM_TILE_PRIO(0xA59F, 1, 6, 27, 0x2161, 0xF, 1)  /* drawn with priority 1 */
 SM_TILE_PRIO(0xA59F, 1, 7, 27, 0x2160, 0xF, 1)  /* drawn with priority 1 */
