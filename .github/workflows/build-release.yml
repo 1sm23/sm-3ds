@@ -84,9 +84,12 @@ jobs:
           # version, and the updater moves a beta to the stable build of its own version).
           if [ "${{ steps.vars.outputs.channel }}" = "Release" ]; then DEBUG=0; CH=release; else DEBUG=1; CH=beta; fi
           echo "channel ${{ steps.vars.outputs.channel }}: DEBUG_TOOLS=$DEBUG CHANNEL=$CH"
+          make -j$(nproc) FULL_NATIVE=1 DEBUG_TOOLS=$DEBUG CHANNEL=$CH cia
           # The same build as a .3dsx for the Homebrew Launcher (it updates itself from the
-          # release's .3dsx asset: source/updater.c, hb_install.c).
-          make -j$(nproc) FULL_NATIVE=1 DEBUG_TOOLS=$DEBUG CHANNEL=$CH cia 3dsx
+          # release's .3dsx asset: source/updater.c, hb_install.c). A make of its own: `cia 3dsx`
+          # in one -j make runs two sub-makes on the same build dir, and from clean one of them
+          # broke (no .3dsx came out).
+          make -j$(nproc) FULL_NATIVE=1 DEBUG_TOOLS=$DEBUG CHANNEL=$CH 3dsx
 
       - name: Generate changelog and QR code
         run: |
