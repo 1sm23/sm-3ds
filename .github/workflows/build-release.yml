@@ -85,6 +85,11 @@ jobs:
           if [ "${{ steps.vars.outputs.channel }}" = "Release" ]; then DEBUG=0; CH=release; else DEBUG=1; CH=beta; fi
           echo "channel ${{ steps.vars.outputs.channel }}: DEBUG_TOOLS=$DEBUG CHANNEL=$CH"
           make -j$(nproc) FULL_NATIVE=1 DEBUG_TOOLS=$DEBUG CHANNEL=$CH cia
+          # The same build as a .3dsx for the Homebrew Launcher (it updates itself from the
+          # release's .3dsx asset: source/updater.c, hb_install.c). A make of its own: `cia 3dsx`
+          # in one -j make runs two sub-makes on the same build dir, and from clean one of them
+          # broke (no .3dsx came out).
+          make -j$(nproc) FULL_NATIVE=1 DEBUG_TOOLS=$DEBUG CHANNEL=$CH 3dsx
 
       - name: Generate changelog and QR code
         run: |
@@ -123,7 +128,8 @@ jobs:
             fi
             echo "## Downloads"
             echo
-            echo "- [sm-3ds-${TAG}.cia](${BASE}/sm-3ds-${TAG}.cia)"
+            echo "- [sm-3ds-${TAG}.cia](${BASE}/sm-3ds-${TAG}.cia): install it with FBI (or scan the QR code)."
+            echo "- [sm-3ds-${TAG}.3dsx](${BASE}/sm-3ds-${TAG}.3dsx): for the Homebrew Launcher, copy it to \`/3ds/\` on the SD card."
             echo
             echo "The ROM is not included. Supply your own Super Metroid (Japan, USA)"
             echo "ROM, see the README."
@@ -137,12 +143,15 @@ jobs:
           qrencode -s 10 -o "QR-${TAG}.png" "${BASE}/sm-3ds-${TAG}.cia"
 
           cp output/SuperMetroid3DSPort.cia "sm-3ds-${TAG}.cia"
+          cp output/SuperMetroid3DSPort.3dsx "sm-3ds-${TAG}.3dsx"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: sm-3ds-build
-          path: output/SuperMetroid3DSPort.cia
+          path: |
+            output/SuperMetroid3DSPort.cia
+            output/SuperMetroid3DSPort.3dsx
 
       - name: Create / update GitHub Release
         uses: softprops/action-gh-release@v2
@@ -158,6 +167,7 @@ jobs:
           body_path: release_notes.md
           files: |
             sm-3ds-${{ steps.vars.outputs.tag }}.cia
+            sm-3ds-${{ steps.vars.outputs.tag }}.3dsx
             QR-${{ steps.vars.outputs.tag }}.png
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

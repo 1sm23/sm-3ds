@@ -10,7 +10,7 @@
 
 typedef struct {
     char tag[32];       /* "v0.6.5" */
-    char cia_url[384];  /* browser_download_url of the .cia asset */
+    char asset_url[384];  /* browser_download_url of the asset picked (.cia or .3dsx) */
     bool prerelease;
 } UpdaterRelease;
 
@@ -20,9 +20,10 @@ typedef struct {
 bool Updater_IsNewer(const char* current, const char* remote);
 
 /* Scans a GitHub `GET /repos/{owner}/{repo}/releases` JSON body (newest
- * first) and picks the first release that has a .cia asset and, unless
+ * first) and picks the first release that has an asset whose URL ends in
+ * `ext` (".cia", or ".3dsx" for the Homebrew Launcher build) and, unless
  * `allowBeta`, is not a prerelease. Tolerates a truncated body. */
-bool Updater_PickRelease(const char* json, bool allowBeta, UpdaterRelease* out);
+bool Updater_PickRelease(const char* json, bool allowBeta, const char* ext, UpdaterRelease* out);
 
 /* Like Updater_IsNewer, for a build whose channel is known. A beta build
  * ("v0.3.2 BETA", numbered like the stable it leads to) also counts the

@@ -29,6 +29,7 @@ ROOT = os.path.abspath(os.path.join(HERE, ".."))
 IP_HISTORY_FILE = os.path.join(ROOT, ".3ds_ftp_ip")
 # What `make cia` produces (fixed name; the FTP upload adds the version).
 CIA_PATH = os.path.join(ROOT, "output", "SuperMetroid3DSPort.cia")
+THREEDSX_PATH = os.path.join(ROOT, "output", "SuperMetroid3DSPort.3dsx")
 TITLE = "Super Metroid 3DS - build assistant"
 
 RESET = "\033[0m"
@@ -274,10 +275,13 @@ def run_step(cmd, env, verbose, what):
 # Where --install puts the CIA on the console, and the command that installs it (DEBUG TOOLS ->
 # FTP SERVER in a running debug build, source/ftp_server.h).
 INSTALL_SD_PATH = "/3ds/Super Metroid 3DS/update/dev.cia"
+# The same for the Homebrew Launcher build (--3dsx): the game puts it over the running .3dsx and
+# relaunches through Luma's loader (without Luma it quits to the launcher).
+INSTALL_SD_PATH_3DSX = "/3ds/Super Metroid 3DS/update/dev.3dsx"
 
 
 def run_build(debug=True, send_ftp=False, ftp_host="", ftp_port=5000, clean=False, dry_run=False, jobs=None,
-              verbose=False, install=False):
+              verbose=False, install=False, hb=False):
     jobs = jobs or os.cpu_count() or 4
 
     print(f"\n{BOLD}{CYAN}=================================================={RESET}")
@@ -287,6 +291,8 @@ def run_build(debug=True, send_ftp=False, ftp_host="", ftp_port=5000, clean=Fals
     print(f"  {BOLD}Clean:{RESET}  {'yes (make clean)' if clean else 'no (incremental)'}")
     print(f"  {BOLD}FTP:{RESET}    " + (f"{YELLOW}yes ➔ {ftp_host}:{ftp_port}{RESET}" if send_ftp else "no (local CIA only)")
           + (f" {GREEN}+ install into the running game{RESET}" if send_ftp and install else ""))
+    if hb:
+        print(f"  {BOLD}Format:{RESET} {YELLOW}3dsx (Homebrew Launcher){RESET}")
     print(f"  {BOLD}Jobs:{RESET}   {jobs}")
     print(f"  {BOLD}Output:{RESET} {'verbose' if verbose else 'errors only (-v for everything)'}")
     print(f"{BOLD}{CYAN}=================================================={RESET}\n")
@@ -305,25 +311,32 @@ def run_build(debug=True, send_ftp=False, ftp_host="", ftp_port=5000, clean=Fals
     steps = []
     if clean:
         steps.append(("Cleaning (make clean)", [make_bin, "-C", ROOT, "clean"]))
-    target = "ftp" if send_ftp and not install else "cia"
+    target = "3dsx" if hb else "ftp" if send_ftp and not install else "cia"
     build_cmd = [make_bin, "-C", ROOT, f"-j{jobs}", "FULL_NATIVE=1", f"DEBUG_TOOLS={1 if debug else 0}", target]
     if send_ftp and not install:
         build_cmd += [f"FTP_HOST={ftp_host}", f"FTP_PORT={ftp_port}"]
-    steps.append((f"Building and sending to {ftp_host}:{ftp_port}" if send_ftp and not install else "Building the CIA",
-                  build_cmd))
+    steps.append((f"Building and sending to {ftp_host}:{ftp_port}" if send_ftp and not install
+                  else "Building the 3dsx" if hb else "Building the CIA", build_cmd))
     if send_ftp and install:
         # Upload, then "-SITE INSTALL" (the "-" sends it after the transfer): the game installs
-        # the CIA over itself and relaunches into it.
+        # the CIA over itself and relaunches into it (a 3dsx: replaces itself and quits).
         from urllib.parse import quote
+        local, remote = (THREEDSX_PATH, INSTALL_SD_PATH_3DSX) if hb else (CIA_PATH, INSTALL_SD_PATH)
+        # The size is read when the step runs: the build before it writes the file.
         steps.append((f"Sending to {ftp_host}:{ftp_port} and installing in the running game",
-                      ["curl", "--max-time", "300", "--ftp-create-dirs", "--user", ftp_login(), "-T", CIA_PATH,
-                       f"ftp://{ftp_host}:{ftp_port}{quote(INSTALL_SD_PATH)}",
-                       # "+" = before the transfer: the game's progress bar needs the size.
-                       "-Q", f"+ALLO {os.path.getsize(CIA_PATH)}", "-Q", f"-SITE INSTALL {INSTALL_SD_PATH}"]))
+                      lambda: ["curl", "--max-time", "300", "--ftp-create-dirs", "--user", ftp_login(), "-T", local,
+                               f"ftp://{ftp_host}:{ftp_port}{quote(remote)}",
+                               # "+" = before the transfer: the game's progress bar needs the size.
+                               "-Q", f"+ALLO {os.path.getsize(local)}", "-Q", f"-SITE INSTALL {remote}"]))
 
     output = ""
     for n, (label, cmd) in enumerate(steps, 1):
         print(f"{BOLD}{CYAN}[{n}/{len(steps)}]{RESET} {label}...")
+        if callable(cmd):
+            if dry_run:
+                print(f"      {DIM}(upload and SITE INSTALL){RESET}")
+                continue
+            cmd = cmd()
         if dry_run:
             print(f"      {DIM}{' '.join(cmd)}{RESET}")
             continue
@@ -336,6 +349,14 @@ def run_build(debug=True, send_ftp=False, ftp_host="", ftp_port=5000, clean=Fals
         return 0
 
     remote_name = ""
+    if send_ftp and install and hb:
+        print(f"\n{BOLD}{GREEN}✓ Built and installed on {ftp_host}; the 3dsx relaunches (without Luma it quits "
+              f"to the Homebrew Launcher: open it again from there).{RESET}")
+        return 0
+    if hb:
+        print(f"\n{BOLD}{GREEN}✓ Build finished.{RESET}")
+        print(f"  {BOLD}Saved at:{RESET}  {THREEDSX_PATH}")
+        return 0
     if send_ftp and install:
         print(f"\n{BOLD}{GREEN}✓ Built, installed and relaunched on {ftp_host}.{RESET}")
     elif send_ftp:
@@ -465,6 +486,7 @@ def main():
   ./build_3ds.sh --ftp                    # upload to the last IP used
   ./build_3ds.sh --ftp 192.168.1.55:5000 --clean
   ./build_3ds.sh --install 192.168.1.55   # install into the running game (DEBUG TOOLS -> FTP SERVER on)
+  ./build_3ds.sh --3dsx --install 192.168.1.55   # the same for the game opened from the Homebrew Launcher
   ./build_3ds.sh --mode prod --no-ftp     # what a release build is (no debug tools)
 """)
     parser.add_argument("-m", "--mode", choices=["debug", "test", "prod", "production", "release"],
@@ -476,6 +498,9 @@ def main():
     parser.add_argument("--install", nargs="?", const="true", default=None, metavar="IP[:PORT]",
                         help="Upload to the game's own FTP server (DEBUG TOOLS -> FTP SERVER) and install: "
                              "the game updates itself and relaunches. Debug builds only.")
+    parser.add_argument("--3dsx", dest="hb", action="store_true",
+                        help="Build the Homebrew Launcher .3dsx instead of the CIA (with --install: for a game "
+                             "opened as a 3dsx; it replaces itself and relaunches). Not with --ftp.")
     parser.add_argument("--no-ftp", action="store_true", help="Build only, no menu.")
     parser.add_argument("-c", "--clean", action="store_true", help="Run 'make clean' first.")
     parser.add_argument("-j", "--jobs", type=int, default=None, help="Parallel make jobs.")
@@ -486,6 +511,7 @@ def main():
 
     interactive = args.interactive or (
         args.mode is None and args.ftp is None and args.ip is None and args.install is None and not args.no_ftp and not args.clean
+        and not args.hb
         and sys.stdin.isatty())
     debug = args.mode in (None, "debug", "test")
 
@@ -524,6 +550,9 @@ def main():
                          install=install and bool(ftp_host))
 
     install = args.install is not None
+    if args.hb and (args.ftp is not None or args.ip is not None) and not install:
+        print(f"{RED}--3dsx goes with --install or --no-ftp (ftpd/FBI uploads are for the CIA).{RESET}")
+        return 1
     if install and not debug:
         print(f"{RED}--install needs a debug build (the FTP server is in the DEBUG TOOLS).{RESET}")
         return 1
@@ -540,7 +569,7 @@ def main():
         save_last_ip(ftp_host)
 
     return run_build(debug=debug, send_ftp=send_ftp, ftp_host=ftp_host, ftp_port=ftp_port, clean=args.clean,
-                     dry_run=args.dry_run, jobs=args.jobs, verbose=args.verbose, install=install)
+                     dry_run=args.dry_run, jobs=args.jobs, verbose=args.verbose, install=install, hb=args.hb)
 
 
 if __name__ == "__main__":

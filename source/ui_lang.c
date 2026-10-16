@@ -101,6 +101,7 @@ static const char *const kText[kStrCount] = {
   [kStrUpdAsk2] = "INSTALL IT NOW?",
   [kStrUpdInstalling] = "INSTALLING...",
   [kStrUpdRestart] = "UPDATED. RESTART NOW?",
+  [kStrUpdReopen] = "UPDATED. QUIT TO REOPEN IT?",
   [kStrUpdFailed] = "THE UPDATE FAILED",
   [kStrUpdKept] = "CIA KEPT IN UPDATE/ FOR FBI",
   [kStrYes] = "YES",
