@@ -319,6 +319,7 @@ static void MakeKey(LineKey *k, const PpuLineState *st, const LineInfo *info) {
   k->st.window1left = k->st.window1right = k->st.window2left = k->st.window2right = 0;
   k->st.evenFrame = false;
   k->st.mosaicSize = 0;
+  k->st.fixedColorR = k->st.fixedColorG = k->st.fixedColorB = 0;   // per row: GpuBandFixed
   memset(k->st.m7matrix, 0, sizeof(k->st.m7matrix));
   k->info = *info;
 }
@@ -1434,35 +1435,79 @@ static const char *EmitMode7Pass(const Ppu *ppu, const PpuLineCapture *cap, int 
 // plane's own matrix and fades. Kept as CGRAM indices and decoded with the plane's colour table, so a palette fade
 // or animation changes it as it changes the plane.
 static GpuTex g_art_tex;
-static uint16_t g_art_idx[400 * 240];   // 0 nothing, 1..255 CGRAM index, 0x8000 | BGR555 fixed
-static uint16_t g_art_lut[256];
-static bool g_art_have, g_art_show, g_art_lut_ok;
+// The art's pixels that are not empty, as texel indices in g_art_tex and their values (1..255 a CGRAM index, 0x8000 |
+// BGR555 a fixed colour), the CGRAM ones first: only those change with the palette. A few thousand of the 96000 (the
+// title's: 4104 and 2658), so a palette change rewrites those and the 8x8 blocks that hold them, not the whole canvas.
+static uint32_t *g_art_texel;
+static uint16_t *g_art_val;
+static int g_art_n, g_art_n_pal;
+static uint16_t g_art_block[(400 / 8 + 1) * (240 / 8 + 1)];   // the blocks of the CGRAM pixels, each once
+static int g_art_blocks;
+static uint8_t g_art_used[256];   // the CGRAM indices the art uses ...
+static uint16_t g_art_lut[256];   // ... and their colours when it was last decoded
+static bool g_art_have, g_art_show, g_art_written, g_art_lut_ok;
 enum { kArtShift = 128, kArtX = 72, kArtY = 7 };   // the canvas' (0, 0) is plane (-72, -7): the picture's row 1 at 8
 
 bool GpuPpu_SetSceneArt(const uint16_t *idx) {   // 400x240 CGRAM indices, rows from the top; 0 = nothing
   if (!idx) return g_art_have;
-  memcpy(g_art_idx, idx, sizeof(g_art_idx));
+  int n = 0;
+  for (int i = 0; i < 400 * 240; i++) n += idx[i] != 0;
+  uint32_t *texel = (uint32_t *)realloc(g_art_texel, (size_t)(n ? n : 1) * sizeof(*texel));
+  if (texel) g_art_texel = texel;
+  uint16_t *val = (uint16_t *)realloc(g_art_val, (size_t)(n ? n : 1) * sizeof(*val));
+  if (val) g_art_val = val;
+  if (!texel || !val) return g_art_have = false;
+  static uint8_t seen[1024 * 1024 / 64 / 8];   // blocks already listed
+  memset(seen, 0, sizeof(seen));
+  memset(g_art_used, 0, sizeof(g_art_used));
+  g_art_blocks = 0;
+  int k = 0;
+  for (int pass = 0; pass < 2; pass++) {   // the CGRAM pixels, then the fixed ones
+    for (int y = 0; y < 240; y++)
+      for (int x = 0; x < 400; x++) {
+        const uint16_t v = idx[y * 400 + x];
+        if (!v || (pass == 0) != !(v & 0x8000)) continue;
+        const int t = GpuTexelIndex(x - kArtX + kArtShift, y - kArtY + kArtShift, 1024);
+        g_art_texel[k] = (uint32_t)t, g_art_val[k++] = v;
+        if (pass) continue;
+        g_art_used[v & 255] = 1;
+        const int b = t >> 6;
+        if (!(seen[b >> 3] & 1u << (b & 7))) seen[b >> 3] |= (uint8_t)(1u << (b & 7)), g_art_block[g_art_blocks++] = (uint16_t)b;
+      }
+    if (pass == 0) g_art_n_pal = k;
+  }
+  g_art_n = k;
   g_art_have = true;
-  g_art_lut_ok = false;
+  g_art_written = g_art_lut_ok = false;
   return true;
 }
 void GpuPpu_ShowSceneArt(bool on) { g_art_show = on && g_art_have; }
 
-// Decoded again whenever the plane's colour table (g_lut_m7, rebuilt each frame) is not the one it was decoded with.
+// Decoded again whenever a colour the art uses in the plane's colour table (g_lut_m7, rebuilt each frame) is not the
+// one it was decoded with. The title cycles two other colours (46, 47) every frame.
 static bool ArtRefresh(void) {
-  if (!g_art_tex.px && !GpuBackend_TexCreate(&g_art_tex, 1024, 1024)) return false;
-  if (g_art_lut_ok && memcmp(g_art_lut, g_lut_m7, sizeof(g_art_lut)) == 0) return true;
+  if (!g_art_tex.px) {
+    if (!GpuBackend_TexCreate(&g_art_tex, 1024, 1024)) return false;
+    g_art_written = g_art_lut_ok = false;
+  }
+  if (g_art_lut_ok) {
+    bool same = true;
+    for (int i = 1; i < 256 && same; i++) same = !g_art_used[i] || g_art_lut[i] == g_lut_m7[i];
+    if (same) return true;
+  }
   memcpy(g_art_lut, g_lut_m7, sizeof(g_art_lut));
   g_art_lut_ok = true;
+  g_stats.art_decodes++;
   GpuBackend_BeforeTexWrite();
-  for (int y = 0; y < 240; y++)
-    for (int x = 0; x < 400; x++)
-    {
-      const uint16_t v = g_art_idx[y * 400 + x];
-      g_art_tex.px[GpuTexelIndex(x - kArtX + kArtShift, y - kArtY + kArtShift, 1024)] =
-          v & 0x8000 ? GpuRgba5551(v & 0x7fff) : g_lut_m7[v & 255];
-    }
-  GpuBackend_TexWritten(&g_art_tex, kArtShift - kArtY, kArtShift - kArtY + 239);
+  uint16_t *px = g_art_tex.px;
+  for (int k = 0; k < g_art_n_pal; k++) px[g_art_texel[k]] = g_lut_m7[g_art_val[k] & 255];
+  if (!g_art_written) {   // the fixed colours once (the rest of the texture starts out transparent)
+    for (int k = g_art_n_pal; k < g_art_n; k++) px[g_art_texel[k]] = GpuRgba5551(g_art_val[k] & 0x7fff);
+    g_art_written = true;
+    GpuBackend_TexWritten(&g_art_tex, kArtShift - kArtY, kArtShift - kArtY + 240);
+  } else {
+    for (int b = 0; b < g_art_blocks; b++) GpuBackend_TexBlockWritten(&g_art_tex, g_art_block[b]);
+  }
   return true;
 }
 
@@ -1721,6 +1766,13 @@ bool GpuPpu_BuildFrame(const Ppu *ppu, const PpuLineCapture *cap, GpuFrame *out,
       b->subtract = st->subtractColor;
       b->half = st->halfColor;
       b->fixed = (uint16_t)(st->fixedColorR | st->fixedColorG << 5 | st->fixedColorB << 10);
+      for (int l = l0; l <= l1; l++) {
+        const PpuLineState *ls = &cap->line[l];
+        const uint16_t c = (uint16_t)(ls->fixedColorR | ls->fixedColorG << 5 | ls->fixedColorB << 10);
+        out->row_fixed[l - 1 + kGpuMaxExtraRows] = c;
+        b->fixed_rows |= c != b->fixed;
+      }
+      for (int y = -g_extra_top; l0 == 1 && y < 0; y++) out->row_fixed[y + kGpuMaxExtraRows] = b->fixed;   // line 1's
       bool sprites_built = false;
       b->main_first = out->quad_count;
       if ((*reason = EmitScreen(ppu, cap, inf->main, l0, l1, true, &sprites_built))) { ok = false; break; }

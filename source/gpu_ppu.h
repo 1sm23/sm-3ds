@@ -88,7 +88,8 @@ typedef struct {
   bool clip;
   bool math;
   bool add_subscreen, subtract, half;
-  uint16_t fixed;          // BGR555
+  uint16_t fixed;          // BGR555, of its first row
+  bool fixed_rows;         // the fixed colour changes between its rows (a gradient): GpuBandFixed
   int main_first, main_count;   // quads; sprites come first
   int sub_first, sub_count;
   // A colour window that splits lines: rectangles where, on top of `clip` and `math`,
@@ -137,7 +138,14 @@ typedef struct {
   // the HUD keeps its place on the screen while the view leans, also onto rows of other
   // bands. Each pixel takes the brightness of the band its row belongs to.
   int hud_first, hud_count;
+  uint16_t row_fixed[kGpuMaxExtraRows + kGpuRows + kGpuMaxExtraRows];   // per row from -kGpuMaxExtraRows (GpuBandFixed)
 } GpuFrame;
+
+// The fixed colour of row `row` (y0 <= row < y1) of band `b`. Lines that differ only in it are one band (the title's and
+// the Ceres escape's gradients change it every few lines, which made up to 32 bands, each costing its passes again).
+static inline uint16_t GpuBandFixed(const GpuFrame *f, const GpuBand *b, int row) {
+  return b->fixed_rows ? f->row_fixed[row + kGpuMaxExtraRows] : b->fixed;
+}
 
 // Implemented by the backend. Texels start out as zero (transparent).
 bool GpuBackend_TexCreate(GpuTex *t, int w, int h);
@@ -272,6 +280,7 @@ bool GpuPpu_BuildFrame(const Ppu *ppu, const PpuLineCapture *cap, GpuFrame *out,
 typedef struct {
   int surfaces, tiles_decoded, sprites, screen_rows_composed, m7_cells_decoded;
   int tiles_reused, tiles_fresh, tiles_map, tiles_pal, tiles_char, tiles_plane;
+  int art_decodes;   // the title's scene art decoded again (its colours changed)
   int tiles_deferred;   // BG tiles whose char data changed but whose decode waits for a later frame (GpuPpu_SetDeferTiles)   // tiles_reused: of tiles_decoded, copied from an identical tile decoded earlier in the frame   // why the BG tiles were decoded: new surface, tilemap entry changed, palette row changed, char data changed, plane fix changed
   // Time per stage of the last build, in g_gpu_ppu_clock units (0 without a clock):
   // line analysis + bands, VRAM/CGRAM diff, sprites, BG surfaces and quads, shadow copy.
