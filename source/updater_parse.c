@@ -72,17 +72,17 @@ static bool FindString(const char* seg, const char* segEnd, const char* key,
     return true;
 }
 
-static bool FindCiaUrl(const char* seg, const char* segEnd, char* out, size_t outSize) {
+static bool FindAssetUrl(const char* seg, const char* segEnd, const char* ext, char* out, size_t outSize) {
     static const char kKey[] = "\"browser_download_url\"";
     const char* p = seg;
 
     while ((p = strstr(p, kKey)) != NULL && p < segEnd) {
         char url[384];
-        size_t len;
+        size_t len, extLen = strlen(ext);
 
         if (FindString(p, segEnd, "browser_download_url", url, sizeof(url))) {
             len = strlen(url);
-            if (len > 4 && strcmp(url + len - 4, ".cia") == 0) {
+            if (len > extLen && strcmp(url + len - extLen, ext) == 0) {
                 strncpy(out, url, outSize - 1);
                 out[outSize - 1] = '\0';
                 return true;
@@ -93,7 +93,7 @@ static bool FindCiaUrl(const char* seg, const char* segEnd, char* out, size_t ou
     return false;
 }
 
-bool Updater_PickRelease(const char* json, bool allowBeta, UpdaterRelease* out) {
+bool Updater_PickRelease(const char* json, bool allowBeta, const char* ext, UpdaterRelease* out) {
     static const char kTag[] = "\"tag_name\"";
     const char* p = json;
 
@@ -116,7 +116,7 @@ bool Updater_PickRelease(const char* json, bool allowBeta, UpdaterRelease* out) 
                 rel.prerelease = (strcmp(flag, "true") == 0);
             }
             if ((allowBeta || !rel.prerelease) &&
-                FindCiaUrl(p, segEnd, rel.cia_url, sizeof(rel.cia_url))) {
+                FindAssetUrl(p, segEnd, ext, rel.asset_url, sizeof(rel.asset_url))) {
                 *out = rel;
                 return true;
             }

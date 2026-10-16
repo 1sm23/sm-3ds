@@ -189,12 +189,12 @@ static int VisibleTabs(Tab out[TAB_COUNT]) {
   int n = 0;
   out[n++] = TAB_MAP;
   out[n++] = TAB_STATUS;
-#if DEBUG_TOOLS
-  out[n++] = TAB_DEBUG;
-#endif
   out[n++] = TAB_STATES;
   out[n++] = TAB_ACHIEVEMENTS;
   out[n++] = TAB_OPTIONS;
+#if DEBUG_TOOLS
+  out[n++] = TAB_DEBUG;
+#endif
   return n;
 }
 
@@ -2260,7 +2260,8 @@ static void DrawUpdatePrompt(Surface s) {
     break;
   }
   case UPD_PROMPT_ASK_RESTART:
-    UiDrawTextCentered(s, SCREEN_W / 2, 100, COL_TITLE, Tr(kStrUpdRestart));
+    // A 3dsx with no Luma loader to start it again: YES quits to the Homebrew Launcher.
+    UiDrawTextCentered(s, SCREEN_W / 2, 100, COL_TITLE, Tr(Updater_QuitsToLauncher() ? kStrUpdReopen : kStrUpdRestart));
     UiDrawBoxLabel(s, YesRect(), COL_BOX, COL_BOX_EDGE, COL_GOOD, Pressed(YesRect()), Tr(kStrYes));
     UiDrawBoxLabel(s, NoRect(), COL_BOX, COL_BOX_EDGE, COL_TEXT, Pressed(NoRect()), Tr(kStrNo));
     break;

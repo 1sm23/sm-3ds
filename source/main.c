@@ -44,6 +44,7 @@
 #include "ui_lang.h"
 #include "build_config.h"
 #include "cia_install.h"
+#include "hb_install.h"
 #include "ftp_server.h"
 #include "scene_art.h"
 #if DEBUG_TOOLS
@@ -280,6 +281,14 @@ uint64_t AudioProf_Now(void) {
 
 static float TicksToMs(u64 ticks) {
   return (float)((double)ticks * 1000.0 / SYSCLOCK_ARM11);
+}
+
+// gfxFlushBuffers without GSP (see FlushCache in gpu_ppu_3ds.c: the GSP request waits for core 1), and only
+// for the screens about to be swapped.
+static void FlushScreen(gfxScreen_t screen, gfx3dSide_t side) {
+  u16 w, h;
+  u8 *fb = gfxGetFramebuffer(screen, side, &w, &h);
+  svcFlushProcessDataCache(CUR_PROCESS_HANDLE, (u32)fb, (u32)w * h * gspGetBytesPerPixel(gfxGetScreenFormat(screen)));
 }
 
 // Scene recorder: one shown frame, with what the game was doing.
@@ -665,10 +674,10 @@ static void LogPeriodic(const UiPerf *p) {
   {
     const GpuPpuStats *st = GpuPpu_LastStats();
     Debug_Log("gpu: frames %lu fallback %lu (%s) | build %.1f, wait for GPU %.1f, submit %.1f ms | last frame: "
-              "%d surfaces, %d tiles decoded, %d sprites, %d rows composed, %d mode 7 cells decoded",
+              "%d surfaces, %d tiles decoded, %d sprites, %d rows composed, %d mode 7 cells decoded, scene art decoded %d",
               (unsigned long)p->gpu_frames, (unsigned long)p->gpu_fallbacks, p->gpu_reason ? p->gpu_reason : "-",
               p->gpu_build_ms, p->gpu_wait_ms, p->gpu_submit_ms, st->surfaces, st->tiles_decoded, st->sprites,
-              st->screen_rows_composed, st->m7_cells_decoded);
+              st->screen_rows_composed, st->m7_cells_decoded, st->art_decodes);
     Debug_Log("gpu build, last frame: lines+bands %.2f, vram diff %.2f, sprites %.2f, bg %.2f, shadow copy %.2f ms | "
               "%d bands, %d quads",
               TicksToMs(st->t_lines), TicksToMs(st->t_diff), TicksToMs(st->t_sprites), TicksToMs(st->t_bg),
@@ -740,18 +749,14 @@ int main(int argc, char** argv) {
   g_frames_per_block = kDspBlockFrames;
   g_audiobuffer = (uint8 *)malloc(g_frames_per_block * g_audio_channels * sizeof(int16));
 
-  // The audio thread runs on the system core, which an application only gets a share
-  // of. The DSP needs about 1.5 ms of CPU per block at 804 MHz, so at 268 MHz (Old 3DS,
-  // or the speedup off) the SDL default of 30 % sat right at the limit and the sound
-  // broke up. Ask for more, like mzm: the largest share the system grants.
-  static const u32 kCore1Limits[] = { 80, 70, 50 };
+  // The audio thread and the FTP server run on the system core, which an application only gets a share of: 30 %, in
+  // the CIA and the 3dsx alike. More starves the system modules that run there too (GSP, the network, AM): with 80 %
+  // (2026-10-16) the 2DS's game FTP crawled at 3-18 KB/s, an install failed in AM, every GSP request waited its turn,
+  // and mzm measured audio underruns at 80 % and none at 50 or 30 (decisions log). The 3dsx must ask too: under the
+  // launcher it would keep its host's 80 %. The rsf allows up to 80 (MaxCpu 0xD0) only so a test build can try more.
   u32 core1_limit = 0;
-  Result core1_rc[3] = { 0 };
-  for (size_t i = 0; i < sizeof(kCore1Limits) / sizeof(kCore1Limits[0]); i++)
-    if (R_SUCCEEDED(core1_rc[i] = APT_SetAppCpuTimeLimit(kCore1Limits[i]))) break;
+  const Result core1_rc = APT_SetAppCpuTimeLimit(30);
   APT_GetAppCpuTimeLimit(&core1_limit);
-  if (core1_limit == 0 && R_SUCCEEDED(APT_SetAppCpuTimeLimit(30)))
-    APT_GetAppCpuTimeLimit(&core1_limit);
   g_audio_ok = AudioStart(core1_limit != 0);
 
   mkdir("saves", 0755);
@@ -771,9 +776,7 @@ int main(int argc, char** argv) {
     Debug_Log("console %s, audio %s (%d Hz, %d frames x %d buffers)", n3ds ? "New 3DS" : "Old 3DS/2DS",
               g_audio_ok ? "open" : "FAILED", kAudioRate, kAudioBufFrames, kAudioBufs);
     if (!g_audio_ok) Debug_Log("audio failed: ndspInit %08lX", (unsigned long)g_ndsp_rc);
-    Debug_Log("core 1 time limit: asked 80 -> %08lX, 70 -> %08lX, 50 -> %08lX; granted %lu %%",
-              (unsigned long)core1_rc[0], (unsigned long)core1_rc[1], (unsigned long)core1_rc[2],
-              (unsigned long)core1_limit);
+    Debug_Log("core 1 time limit: asked 30 -> %08lX; granted %lu %%", (unsigned long)core1_rc, (unsigned long)core1_limit);
   }
 
   PpuBeginDrawing(snes->snes_ppu, g_pixels, 256 * 4, 0);
@@ -803,6 +806,7 @@ int main(int argc, char** argv) {
 
     hidScanInput();
     FtpServer_Tick();
+    HbInstall_MainTick();   // an install of the 3dsx closes the romfs here (hb_install.h)
 #if DEBUG_TOOLS
     {   // The FTP server was on when the game last ran (or a start found no Wi-Fi): try again every
         // ~2 s until it serves or the DEBUG TOOLS stop it.
@@ -827,9 +831,14 @@ int main(int argc, char** argv) {
     if (FtpServer_TakeRelaunch()) {   // SITE INSTALL put a new build in place: close as usual and let the system start it
       // The chainloader is run by libctru when the process exits (aptExit), after the whole teardown below. Jumping at
       // once (APT_DoApplicationJump) had the system close the game under its feet while the GPU was still in use, and
-      // the console froze (2026-10-12).
-      ExitStep("relaunching into the build just installed");
-      aptSetChainloaderToSelf();
+      // the console froze (2026-10-12). The Homebrew Launcher build goes through Luma's loader (hb_install.h), or
+      // back to the launcher without it.
+      if (HbInstall_IsHomebrew()) {
+        ExitStep(HbInstall_SetRelaunch() ? "relaunching the 3dsx just installed" : "quitting to the Homebrew Launcher after an install");
+      } else {
+        ExitStep("relaunching into the build just installed");
+        aptSetChainloaderToSelf();
+      }
       g_quit_request = true;
     }
     {
@@ -1032,6 +1041,9 @@ int main(int argc, char** argv) {
         const bool by_hand = SmWide_Gameplay() && SmPlanes_RoomHasRules();
         GpuPpu_SetPlaneRule(by_hand ? SmPlanes_LayerRule : NULL);
         GpuPpu_SetSlotPlanes(by_hand ? SmPlanes_SlotPlanes : NULL);
+        GpuPpu_SetMode7Planes(SmWide_Gameplay() && SmPlanes_Mode7Key() ? SmPlanes_Mode7CellPlane : NULL, SmPlanes_Mode7Key(),
+                        SmPlanes_Mode7BasePlane(), SmPlanes_Mode7FillReach(), SmPlanes_Mode7FillMode);
+        GpuPpu_SetSpriteCap(SmWide_Gameplay() ? SmPlanes_SpriteCap() : 3);
         static bool was_by_hand;
         if (by_hand != was_by_hand) {   // for the debug log: a room that has planes set by hand
           was_by_hand = by_hand;
@@ -1125,7 +1137,9 @@ int main(int argc, char** argv) {
       t1 = svcGetSystemTick();
       UiDraw_Present(GFX_TOP, gfxIs3D());
       UiDraw_Present(GFX_BOTTOM, false);
-      gfxFlushBuffers();
+      FlushScreen(GFX_TOP, GFX_LEFT);
+      if (gfxIs3D()) FlushScreen(GFX_TOP, GFX_RIGHT);
+      FlushScreen(GFX_BOTTOM, GFX_LEFT);
       gfxSwapBuffers();
       UiDraw_Swapped();
       t_pres = svcGetSystemTick() - t1;
@@ -1146,7 +1160,7 @@ int main(int argc, char** argv) {
         Rect part;
         if (BottomUi_PresentRect(&part)) UiDraw_PresentRect(GFX_BOTTOM, part);   // a clock or a blinking mark
         else UiDraw_Present(GFX_BOTTOM, false);
-        gfxFlushBuffers();
+        FlushScreen(GFX_BOTTOM, GFX_LEFT);
         gfxScreenSwapBuffers(GFX_BOTTOM, false);
         UiDraw_Swapped();
         t_pres = svcGetSystemTick() - t1;
@@ -1235,7 +1249,7 @@ int main(int argc, char** argv) {
   hidExit();
   gfxExit();
   ExitStep("gfx closed");
-  romfsExit();
+  if (!HbInstall_RomfsClosed()) romfsExit();
   ExitStep("returning");
   if (g_exit_file) fclose(g_exit_file);
 

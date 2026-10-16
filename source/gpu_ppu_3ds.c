@@ -85,9 +85,10 @@ static TexImpl *g_dirty[kMaxDirtyTex];
 static int g_dirty_n;
 
 // Blocks this close together (in blocks of 128 bytes) are copied and flushed in one go. Measured on a
-// 2DS (perf CSV, 628 scattered tiles): a GSPGPU_FlushDataCache call costs ~0.108 ms whatever its size
+// 2DS (perf CSV, 628 scattered tiles): a GSPGPU_FlushDataCache call cost ~0.108 ms whatever its size
 // (+ 0.0016 ms/KB) and the memcpy ~0.011 ms/KB, i.e. ~1.4 us per 128-byte block: a clean gap is
-// cheaper to copy than to flush around while it is shorter than ~80 blocks.
+// cheaper to copy than to flush around while it is shorter than ~80 blocks. FlushCache (below) costs
+// ~0.05 ms a call, so the gap could be ~35 blocks now; not re-tuned.
 enum { kRunGap = 80 };
 
 // What the last FlushTextures spent (for the perf recorder): copying to the textures, flushing the
@@ -95,11 +96,17 @@ enum { kRunGap = 80 };
 static u64 g_tex_copy_ticks, g_tex_flush_ticks;
 static int g_tex_runs, g_tex_bytes;
 
+// Writes the CPU's cached data back to memory for the GPU. The kernel call, not GSPGPU_FlushDataCache: that is a
+// request to GSP, which runs on core 1 and waits for its turn while the game holds 80 % of that core (MaxCpu 0xD0).
+static inline void FlushCache(const void *p, size_t bytes) {
+  svcFlushProcessDataCache(CUR_PROCESS_HANDLE, (u32)p, (u32)bytes);
+}
+
 static void CopyRun(uint16_t *dst, const uint16_t *src, size_t bytes) {
   const u64 t0 = svcGetSystemTick();
   memcpy(dst, src, bytes);
   const u64 t1 = svcGetSystemTick();
-  GSPGPU_FlushDataCache(dst, (u32)bytes);
+  FlushCache(dst, bytes);
   g_tex_copy_ticks += t1 - t0;
   g_tex_flush_ticks += svcGetSystemTick() - t1;
   g_tex_runs++;
@@ -174,7 +181,7 @@ bool GpuBackend_TexCreate(GpuTex *t, int w, int h) {
   C3D_TexSetFilter(&im->tex, GPU_NEAREST, GPU_NEAREST);
   C3D_TexSetWrap(&im->tex, GPU_REPEAT, GPU_REPEAT);
   memset(im->tex.data, 0, (size_t)w * h * 2);
-  GSPGPU_FlushDataCache(im->tex.data, (u32)w * h * 2);
+  FlushCache(im->tex.data, (size_t)w * h * 2);
   im->px = shadow;
   im->w = w;
   t->px = shadow;
@@ -424,7 +431,7 @@ static void BatchDraw(void) {
 }
 
 static void EndFrame(void) {
-  if (g_nverts) GSPGPU_FlushDataCache(g_vbo, (u32)g_nverts * sizeof(Vtx));
+  if (g_nverts) FlushCache(g_vbo, (size_t)g_nverts * sizeof(Vtx));
   C3D_FrameEnd(0);
 }
 
@@ -683,13 +690,26 @@ static bool SubByHand(const GpuFrame *f, const GpuBand *b) {
   return false;
 }
 
+// The band's rows [*y0, *y1) from *y1 on whose fixed colour is the same (a gradient changes it every few rows); false
+// after the last. Start with *y1 = b->y0.
+static bool NextFixedRun(const GpuFrame *f, const GpuBand *b, int *y0, int *y1, uint16_t *fixed) {
+  if (*y1 >= b->y1) return false;
+  *y0 = *y1;
+  *fixed = GpuBandFixed(f, b, *y0);
+  for (*y1 = *y0 + 1; *y1 < b->y1 && GpuBandFixed(f, b, *y1) == *fixed;) ++*y1;
+  return true;
+}
+
 static void DrawBandSub(const GpuFrame *f, const GpuBand *b) {
   // Backdrop: the fixed colour, alpha 0 = "no subscreen pixel here".
-  EnvSolid(ColorFrom555(b->fixed, 0));
   C3D_DepthTest(true, GPU_ALWAYS, GPU_WRITE_ALL);
   C3D_StencilTest(true, GPU_ALWAYS, 0, 0, 0xff);
   C3D_StencilOp(GPU_STENCIL_REPLACE, GPU_STENCIL_REPLACE, GPU_STENCIL_REPLACE);
-  SolidRect(f->x0, b->y0, f->x1, b->y1, 0);
+  uint16_t fixed;
+  for (int y0, y1 = b->y0; NextFixedRun(f, b, &y0, &y1, &fixed);) {
+    EnvSolid(ColorFrom555(fixed, 0));
+    SolidRect(f->x0, y0, f->x1, y1, 0);
+  }
   g_flat_sub = SubIsEffect(f, b) && !SubByHand(f, b);
   DrawQuads(f, b->sub_first, b->sub_count, false, false);
   g_flat_sub = false;
@@ -703,15 +723,18 @@ static void MathAdd(const GpuFrame *f, const GpuBand *b, int stencil_ref, int st
   const GPU_BLENDEQUATION eq = b->subtract ? GPU_BLEND_REVERSE_SUBTRACT : GPU_BLEND_ADD;
   const float v0 = RtV(b->y0), v1 = RtV(b->y1);
   C3D_TexBind(0, &g_sub_tex);
+  uint16_t fixed;
   if (!b->half) {
     // Subscreen pixels (alpha 1) and its backdrop (alpha 0: the fixed colour) added in one pass: the same sums as the two
     // passes below, which only `half` needs (it halves the pixels and never the backdrop).
-    EnvTexOverConst(ColorFrom555(b->fixed, 255));
     C3D_AlphaTest(false, GPU_ALWAYS, 0);
     C3D_AlphaBlend(eq, eq, GPU_ONE, GPU_ONE, GPU_ZERO, GPU_ONE);
-    BatchBegin();
-    PushQuad(f->x0, b->y0, f->x1, b->y1, 0, RtU(f->x0 - dx), v0, RtU(f->x1 - dx), v1);
-    BatchDraw();
+    for (int y0, y1 = b->y0; NextFixedRun(f, b, &y0, &y1, &fixed);) {
+      EnvTexOverConst(ColorFrom555(fixed, 255));
+      BatchBegin();
+      PushQuad(f->x0, y0, f->x1, y1, 0, RtU(f->x0 - dx), RtV(y0), RtU(f->x1 - dx), RtV(y1));
+      BatchDraw();
+    }
     return;
   }
   // Subscreen pixels (alpha 1): halved.
@@ -723,12 +746,14 @@ static void MathAdd(const GpuFrame *f, const GpuBand *b, int stencil_ref, int st
   PushQuad(f->x0, b->y0, f->x1, b->y1, 0, RtU(f->x0 - dx), v0, RtU(f->x1 - dx), v1);
   BatchDraw();
   // Subscreen backdrop (alpha 0): the fixed colour, never halved.
-  EnvConstRgbTexAlpha(ColorFrom555(b->fixed, 255));
   C3D_AlphaTest(true, GPU_EQUAL, 0);
   C3D_AlphaBlend(eq, eq, GPU_ONE, GPU_ONE, GPU_ZERO, GPU_ONE);
-  BatchBegin();
-  PushQuad(f->x0, b->y0, f->x1, b->y1, 0, RtU(f->x0 - dx), v0, RtU(f->x1 - dx), v1);
-  BatchDraw();
+  for (int y0, y1 = b->y0; NextFixedRun(f, b, &y0, &y1, &fixed);) {
+    EnvConstRgbTexAlpha(ColorFrom555(fixed, 255));
+    BatchBegin();
+    PushQuad(f->x0, y0, f->x1, y1, 0, RtU(f->x0 - dx), RtV(y0), RtU(f->x1 - dx), RtV(y1));
+    BatchDraw();
+  }
 }
 
 static void MathPass(const GpuFrame *f, const GpuBand *b) {
@@ -772,11 +797,14 @@ static void MathPass(const GpuFrame *f, const GpuBand *b) {
     }
     MathAdd(f, b, 2, 2, StereoDepth_EyeOffsetPx(u, g_slider, g_eye_sign));
   } else {
-    EnvSolid(ColorFrom555(b->fixed, 255));
     C3D_AlphaTest(false, GPU_ALWAYS, 0);
     if (b->half) C3D_AlphaBlend(eq, eq, GPU_CONSTANT_ALPHA, GPU_CONSTANT_ALPHA, GPU_ZERO, GPU_ONE);
     else C3D_AlphaBlend(eq, eq, GPU_ONE, GPU_ONE, GPU_ZERO, GPU_ONE);
-    SolidRect(f->x0, b->y0, f->x1, b->y1, 0);
+    uint16_t fixed;
+    for (int y0, y1 = b->y0; NextFixedRun(f, b, &y0, &y1, &fixed);) {
+      EnvSolid(ColorFrom555(fixed, 255));
+      SolidRect(f->x0, y0, f->x1, y1, 0);
+    }
   }
   C3D_AlphaTest(false, GPU_ALWAYS, 0);
   BlendOff();
@@ -851,7 +879,7 @@ void GpuPpu3ds_SetOverlay(const uint32_t *px, int corner) {
     const uint32_t *col = px + x * kOverlaySize + (kOverlaySize - 1);   // y = 0 is the last word
     for (int y = 0; y < kOverlaySize; y++) dst[GpuTexelIndex(x, y, kOverlaySize)] = col[-y];
   }
-  GSPGPU_FlushDataCache(dst, kOverlaySize * kOverlaySize * 4);
+  FlushCache(dst, kOverlaySize * kOverlaySize * 4);
 }
 
 // The achievement notice on the top screen: kToastW x kToastH like the overlay, its box in
@@ -868,7 +896,7 @@ void GpuPpu3ds_SetToast(const uint32_t *px) {
     const uint32_t *col = px + x * kToastH + (kToastH - 1);
     for (int y = 0; y < kToastH; y++) dst[GpuTexelIndex(x, y, kToastW)] = col[-y];
   }
-  GSPGPU_FlushDataCache(dst, kToastW * kToastH * 4);
+  FlushCache(dst, kToastW * kToastH * 4);
 }
 
 // The options menu and the file select (SmWide_MenuView): the game's starfield repeats by itself, so the pattern of one

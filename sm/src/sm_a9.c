@@ -1203,7 +1203,8 @@ void MotherBrain_DrawBrain(void) {  // 0xA99357
   }
   int v6 = (flash_timer & 6) >> 1;
   uint16 r18 = E->base.x_pos + g_word_A993BB[v6];
-  if ((int16)(r18 + 32 - layer1_x_pos) >= 0) {
+  // 3DS port (WIDE): the left margin counts as screen, or the brain in its tank vanished while the tank was still in view.
+  if ((int16)(r18 + 32 - layer1_x_pos + g_rtl_wide_margin_left) >= 0) {
     uint16 r20 = E->base.y_pos + g_word_A993C3[v6];
     MotherBrain_AddSpritemapToOam(v2, r18, r20, r22);
   }

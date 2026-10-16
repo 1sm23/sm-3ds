@@ -8,13 +8,15 @@ static int sFailures;
 #define CHECK(cond) do { if (!(cond)) { \
     printf("FAIL %s:%d: %s\n", __FILE__, __LINE__, #cond); sFailures++; } } while (0)
 
-/* Newest first, like the GitHub API: a beta, a stable, an older stable. */
+/* Newest first, like the GitHub API: a beta, a stable, an older stable. Only the
+ * stable has a .3dsx, as when the Homebrew Launcher build started being published. */
 static const char kJson[] =
     "[{\"tag_name\":\"v0.7.0\",\"prerelease\":true,\"assets\":["
     "{\"name\":\"a.zip\",\"browser_download_url\":\"http://h/a.zip\"},"
     "{\"name\":\"sm-3ds.cia\",\"browser_download_url\":\"http://h/beta.cia\"}]},"
     "{\"tag_name\":\"v0.6.5\",\"prerelease\":false,\"assets\":["
-    "{\"browser_download_url\":\"http://h/stable.cia\"}]},"
+    "{\"browser_download_url\":\"http://h/stable.cia\"},"
+    "{\"browser_download_url\":\"http://h/stable.3dsx\"}]},"
     "{\"tag_name\":\"v0.6.4\",\"prerelease\": false,\"assets\":["
     "{\"browser_download_url\":\"http://h/old.cia\"}]}]";
 
@@ -155,20 +157,26 @@ int main(void) {
     CHECK(Updater_IsNewer("v0.2.2-dev.111+7ab9756", "v0.2.2"));
     CHECK(!Updater_IsNewer("v0.2.3", "v0.2.3-dev.9+aa50ff6"));
 
-    CHECK(Updater_PickRelease(kJson, false, &rel));
+    CHECK(Updater_PickRelease(kJson, false, ".cia", &rel));
     CHECK(strcmp(rel.tag, "v0.6.5") == 0);
-    CHECK(strcmp(rel.cia_url, "http://h/stable.cia") == 0);
+    CHECK(strcmp(rel.asset_url, "http://h/stable.cia") == 0);
     CHECK(!rel.prerelease);
 
-    CHECK(Updater_PickRelease(kJson, true, &rel));
+    CHECK(Updater_PickRelease(kJson, true, ".cia", &rel));
     CHECK(strcmp(rel.tag, "v0.7.0") == 0);
-    CHECK(strcmp(rel.cia_url, "http://h/beta.cia") == 0);
+    CHECK(strcmp(rel.asset_url, "http://h/beta.cia") == 0);
     CHECK(rel.prerelease);
 
-    CHECK(!Updater_PickRelease("[]", true, &rel));
-    CHECK(!Updater_PickRelease("{\"message\":\"rate limited\"}", true, &rel));
+    /* The 3dsx build skips the releases that have no .3dsx, the beta included. */
+    CHECK(Updater_PickRelease(kJson, true, ".3dsx", &rel));
+    CHECK(strcmp(rel.tag, "v0.6.5") == 0);
+    CHECK(strcmp(rel.asset_url, "http://h/stable.3dsx") == 0);
+    CHECK(!Updater_PickRelease(kJson, true, ".zip3dsx", &rel));
+
+    CHECK(!Updater_PickRelease("[]", true, ".cia", &rel));
+    CHECK(!Updater_PickRelease("{\"message\":\"rate limited\"}", true, ".cia", &rel));
     /* Truncated mid-URL: the incomplete release must be skipped, not garbled. */
-    CHECK(!Updater_PickRelease("[{\"tag_name\":\"v1.0.0\",\"assets\":[{\"browser_download_url\":\"http://h/x.ci", true, &rel));
+    CHECK(!Updater_PickRelease("[{\"tag_name\":\"v1.0.0\",\"assets\":[{\"browser_download_url\":\"http://h/x.ci", true, ".cia", &rel));
 
     TestNewerBuild();
     TestCollectNotes();

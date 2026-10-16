@@ -13,6 +13,7 @@ static bool g_m7_under_hud;
 
 void GpuPpu_SetMode7UnderHud(bool on) { g_m7_under_hud = on; }
 static bool g_no_sprite_wrap;
+static int g_sprite_cap = 3;   // GpuPpu_SetSpriteCap
 
 void GpuPpu_SetNoSpriteWrap(bool no_wrap) { g_no_sprite_wrap = no_wrap; }
 const int16_t *g_gpu_ppu_obj_x, *g_gpu_ppu_obj_y;
@@ -318,6 +319,7 @@ static void MakeKey(LineKey *k, const PpuLineState *st, const LineInfo *info) {
   k->st.window1left = k->st.window1right = k->st.window2left = k->st.window2right = 0;
   k->st.evenFrame = false;
   k->st.mosaicSize = 0;
+  k->st.fixedColorR = k->st.fixedColorG = k->st.fixedColorB = 0;   // per row: GpuBandFixed
   memset(k->st.m7matrix, 0, sizeof(k->st.m7matrix));
   k->info = *info;
 }
@@ -779,6 +781,24 @@ void GpuPpu_Invalidate(void) {
 
 static GpuTex g_m7_tex;
 static uint8_t g_m7_map[128 * 128];      // tile each cell was decoded with
+// Cells set by hand to other stereo planes (GpuPpu_SetMode7Planes) are decoded into a texture per plane instead (and left
+// transparent in g_m7_tex and the other planes'), each drawn with the same rows on its plane.
+enum { kM7Splits = 2 };
+static struct { GpuTex tex; uint8_t plane; } g_m7_split[kM7Splits];   // StereoPlane + 1, 0 = not used in this room
+static int (*g_m7_cell_plane)(int cell, int tile);
+static int g_m7_planes_key, g_m7_split_key;   // the hook's key now / the one the cells were decoded with
+static int g_m7_base_plane = kStereoPlay, g_m7_fill_reach;
+static int (*g_m7_fill_mode)(int cell);   // 0 from above (else below), 1 from the row, -1 none
+// Per cell and texture (g_m7_tex, then the splits): the tile + 1 drawn there to fill behind a nearer cell, 0 = none.
+static uint16_t g_m7_fill[1 + kM7Splits][128 * 128];
+void GpuPpu_SetMode7Planes(int (*cell_plane)(int cell, int tile), int key, int base_plane, int fill_reach,
+                           int (*fill_mode)(int cell)) {
+  g_m7_cell_plane = cell_plane;
+  g_m7_fill_mode = fill_mode;
+  g_m7_planes_key = cell_plane ? key : 0;
+  g_m7_base_plane = base_plane;
+  g_m7_fill_reach = cell_plane ? fill_reach : 0;
+}
 static uint8_t g_m7_stale[128 * 128];
 static uint8_t g_m7_row_stale[128];      // stale cells per row of cells: M7Sync skips clean rows
 
@@ -823,12 +843,75 @@ static void M7Track(const Ppu *ppu) {
   // Map bytes: cells c .. c+7 share a VRAM group.
   for (int g = 0; g < 128 * 128 / 8; g++) {
     if (!g_group_dirty[g]) continue;
-    for (int c = g * 8; c < g * 8 + 8; c++)
-      if ((ppu->vram[c] & 0xff) != g_m7_map[c]) M7MarkStale(c);
+    for (int c = g * 8; c < g * 8 + 8; c++) {
+      if ((ppu->vram[c] & 0xff) == g_m7_map[c]) continue;
+      M7MarkStale(c);
+      for (int d = 1; d <= g_m7_fill_reach; d++) {   // cells that may have filled from it
+        if ((c & 127) >= d) M7MarkStale(c - d);
+        if ((c & 127) + d < 128) M7MarkStale(c + d);
+        if (c >= d * 128) M7MarkStale(c - d * 128);
+        if (c + d * 128 < 128 * 128) M7MarkStale(c + d * 128);
+      }
+    }
   }
   if (any_tile)
-    for (int c = 0; c < 128 * 128; c++)
-      if (tile_dirty[g_m7_map[c]]) M7MarkStale(c);
+    for (int c = 0; c < 128 * 128; c++) {
+      bool d = tile_dirty[g_m7_map[c]];
+      for (int i = 0; i <= kM7Splits && !d && g_m7_fill_reach; i++) d = g_m7_fill[i][c] && tile_dirty[g_m7_fill[i][c] - 1];
+      if (d) M7MarkStale(c);
+    }
+}
+
+// The split texture of `plane` (made when first needed), or NULL when there is no room for another.
+static GpuTex *M7SplitTex(int plane) {
+  int free_slot = -1;
+  for (int i = 0; i < kM7Splits; i++) {
+    if (g_m7_split[i].plane == plane + 1) return &g_m7_split[i].tex;
+    if (!g_m7_split[i].plane && free_slot < 0) free_slot = i;
+  }
+  if (free_slot < 0) return NULL;
+  GpuTex *t = &g_m7_split[free_slot].tex;
+  if (!t->px && !GpuBackend_TexCreate(t, 1024, 1024)) return NULL;
+  g_m7_split[free_slot].plane = (uint8_t)(plane + 1);
+  return t;
+}
+
+static bool M7IsSplit(const GpuTex *t) {
+  for (int i = 0; i < kM7Splits; i++)
+    if (t == &g_m7_split[i].tex) return true;
+  return false;
+}
+
+// A new room or new rules: the planes are given out again and every cell is decoded again (M7Track).
+static void M7SplitUpdate(void) {
+  if (g_m7_planes_key == g_m7_split_key) return;
+  g_m7_split_key = g_m7_planes_key;
+  for (int i = 0; i < kM7Splits; i++) g_m7_split[i].plane = 0;
+  g_m7_fresh = true;
+}
+
+// Tile `t` into cell `c` of `tex`; with `cover` (a fill) only where tile `cover` has a pixel, so the fill shows only
+// past that pixel's edge with the 3D on, never through it.
+static void M7DecodeTile(const Ppu *ppu, GpuTex *tex, int c, int t, int cover) {
+  if (!g_m7_tile_known[t]) M7TileColours(ppu, t);
+  uint16_t *dst = tex->px + (c << 6);   // cells are the texture's 8x8 blocks, row-major
+  const uint16_t *src = &ppu->vram[t * 64], *mask = cover >= 0 ? &ppu->vram[cover * 64] : NULL;
+  for (int r = 0; r < 8; r++) {
+    const uint8_t *m = g_row_morton[r];
+    for (int x = 0; x < 8; x++)
+      dst[m[x]] = mask && !(mask[r * 8 + x] >> 8) ? 0 : g_lut_m7[src[r * 8 + x] >> 8];
+  }
+  // Marked block by block, as the BG tiles: the Ceres elevator decodes 16-36 cells a frame spread over ~90 rows of
+  // cells, and marking the rows between them uploaded 1.4 MB a frame (13.7 ms on the 2DS) for ~4 KB of texels.
+  GpuBackend_TexBlockWritten(tex, c);
+}
+
+// The plane cell `c` goes to (the hook's, or g_m7_base_plane), and the texture that holds it.
+static int M7CellPlane(const Ppu *ppu, int c, GpuTex **tex) {
+  const int p = g_m7_cell_plane ? g_m7_cell_plane(c, ppu->vram[c] & 0xff) : -1;
+  GpuTex *split = p >= 0 ? M7SplitTex(p) : NULL;
+  if (tex) *tex = split ? split : &g_m7_tex;
+  return split ? p : g_m7_base_plane;
 }
 
 static void M7DecodeCell(const Ppu *ppu, int c) {
@@ -836,16 +919,40 @@ static void M7DecodeCell(const Ppu *ppu, int c) {
   const int t = ppu->vram[c] & 0xff;
   g_m7_map[c] = (uint8_t)t;
   if (g_m7_stale[c]) g_m7_stale[c] = 0, g_m7_row_stale[c >> 7]--;
-  if (!g_m7_tile_known[t]) M7TileColours(ppu, t);
-  uint16_t *dst = g_m7_tex.px + (c << 6);   // cells are the texture's 8x8 blocks, row-major
-  const uint16_t *src = &ppu->vram[t * 64];
-  for (int r = 0; r < 8; r++) {
-    const uint8_t *m = g_row_morton[r];
-    for (int x = 0; x < 8; x++) dst[m[x]] = g_lut_m7[src[r * 8 + x] >> 8];
+  GpuTex *tex;
+  const int plane = M7CellPlane(ppu, c, &tex);
+  // In every other texture that exists (one made for a previous room included: it may get a plane later) the cell is
+  // transparent, or, in a texture of a farther plane, the nearest cell on that plane (within the reach) above it, else
+  // below it, or in its row where the hook says so: what the other eye sees beside the nearer cell, which has no picture
+  // of its own behind it.
+  const int mode = g_m7_fill_mode ? g_m7_fill_mode(c) : 0;
+  const bool across = mode == 1;
+  const int reach = mode < 0 ? 0 : g_m7_fill_reach;
+  for (int i = -1; i < kM7Splits; i++) {
+    GpuTex *o = i < 0 ? &g_m7_tex : &g_m7_split[i].tex;
+    if (o == tex || !o->px) continue;
+    const int oplane = i < 0 ? g_m7_base_plane : g_m7_split[i].plane - 1;
+    int fill = -1;
+    if (oplane > plane && (i < 0 || g_m7_split[i].plane))
+      for (int d = 1; d <= reach && fill < 0; d++)
+        for (int s = -1; s <= 1 && fill < 0; s += 2) {
+          const int x = (c & 127) + (across ? s * d : 0), y = (c >> 7) + (across ? 0 : s * d);
+          const int n = y * 128 + x;
+          GpuTex *xt;
+          if (x >= 0 && x < 128 && y >= 0 && y < 128 && M7CellPlane(ppu, n, &xt) == oplane && xt == o) fill = ppu->vram[n] & 0xff;
+        }
+    g_m7_fill[i + 1][c] = (uint16_t)(fill + 1);
+    if (fill >= 0) {
+      M7DecodeTile(ppu, o, c, fill, t);
+    } else {
+      memset(o->px + (c << 6), 0, 64 * sizeof(uint16_t));
+      GpuBackend_TexBlockWritten(o, c);
+    }
   }
-  // Marked block by block, as the BG tiles: the Ceres elevator decodes 16-36 cells a frame spread over ~90 rows of
-  // cells, and marking the rows between them uploaded 1.4 MB a frame (13.7 ms on the 2DS) for ~4 KB of texels.
-  GpuBackend_TexBlockWritten(&g_m7_tex, c);
+  for (int i = 0; i < kM7Splits; i++)
+    if (tex == &g_m7_split[i].tex) g_m7_fill[i + 1][c] = 0;
+  if (tex == &g_m7_tex) g_m7_fill[0][c] = 0;
+  M7DecodeTile(ppu, tex, c, t, -1);
   g_stats.m7_cells_decoded++;
 }
 
@@ -1009,7 +1116,8 @@ static const char *BuildSprites(const Ppu *ppu, const PpuLineState *st) {
     sp->size = size;
     sp->x = x;
     sp->y = y;
-    sp->level = (uint8_t)(((attr >> 12) & 3) * 4 + 2);
+    const int prio = (attr >> 12) & 3;
+    sp->level = (uint8_t)((!hud && prio > g_sprite_cap ? g_sprite_cap : prio) * 4 + 2);
     sp->hflip = attr & 0x4000;
     sp->vflip = attr & 0x8000;
     sp->no_wrap = no_wrap;
@@ -1134,6 +1242,7 @@ static bool EmitHudSprite(const Sprite *sp, int y0, int y1) {
 static bool g_sprite_priority_order;
 // The 3D is on (gameplay): sprites are emitted by priority first, OAM order within one (EmitSprites).
 void GpuPpu_SetSpritePriorityOrder(bool on) { g_sprite_priority_order = on; }
+void GpuPpu_SetSpriteCap(int cap) { g_sprite_cap = cap < 0 ? 0 : cap > 3 ? 3 : cap; }
 
 static bool EmitSprites(int y0, int y1, bool main) {
   // The HUD list is drawn in order, the last quad on top; among sprites the first wins.
@@ -1314,16 +1423,17 @@ static inline int64_t FloorDiv64(int64_t a, int64_t b) {   // b > 0
 // its texel (x + 128, y + 128) is plane (x, y); `shift` 128, `level` below the plane's).
 static const char *EmitMode7Pass(const Ppu *ppu, const PpuLineCapture *cap, int l0, int l1, bool math, int scr, GpuTex *tex,
                                  int shift, int level) {
-  const bool art = tex != &g_m7_tex;
-  if (!art && !g_m7_tex.px) {
+  const bool plane = tex == &g_m7_tex, art = !plane && !M7IsSplit(tex);   // a split texture is synced with the plane
+  if (plane && !g_m7_tex.px) {
     if (!GpuBackend_TexCreate(&g_m7_tex, 1024, 1024)) return "out of texture memory";
     g_m7_fresh = true;
   }
-  if (!art && g_m7_tracked_frame != g_frame_no) {   // first use: GpuPpu_BuildFrame tracks from now on
+  if (plane && g_m7_tracked_frame != g_frame_no) {   // first use: GpuPpu_BuildFrame tracks from now on
+    M7SplitUpdate();
     M7Track(ppu);
     g_m7_tracked_frame = g_frame_no;
   }
-  if (!art) g_m7_used_frame = g_frame_no;
+  if (plane) g_m7_used_frame = g_frame_no;
   // Rows: the band's lines, plus the extra rows above or below when the band touches that
   // edge (the first or last line's matrix, carried on: the plane goes on there too).
   // Columns: the whole frame, margins included.
@@ -1353,7 +1463,7 @@ static const char *EmitMode7Pass(const Ppu *ppu, const PpuLineCapture *cap, int 
     x0 &= 1023, x1 &= 1023, y0 &= 1023, y1 &= 1023;
     if (x0 > x1 || y0 > y1) x0 = y0 = 0, x1 = y1 = 1023;
   }
-  if (!art && x0 <= x1 && y0 <= y1) M7Sync(ppu, x0, x1, y0, y1);
+  if (plane && x0 <= x1 && y0 <= y1) M7Sync(ppu, x0, x1, y0, y1);
   const int flags = (math ? kGpuQuadMath : 0) | (border ? kGpuQuadBorder : 0);
   // Each line's row, cut to the plane with the large field. Consecutive whole rows whose
   // starts advance by the same amount every line (and with the same per-pixel step) are
@@ -1431,35 +1541,79 @@ static const char *EmitMode7Pass(const Ppu *ppu, const PpuLineCapture *cap, int 
 // plane's own matrix and fades. Kept as CGRAM indices and decoded with the plane's colour table, so a palette fade
 // or animation changes it as it changes the plane.
 static GpuTex g_art_tex;
-static uint16_t g_art_idx[400 * 240];   // 0 nothing, 1..255 CGRAM index, 0x8000 | BGR555 fixed
-static uint16_t g_art_lut[256];
-static bool g_art_have, g_art_show, g_art_lut_ok;
+// The art's pixels that are not empty, as texel indices in g_art_tex and their values (1..255 a CGRAM index, 0x8000 |
+// BGR555 a fixed colour), the CGRAM ones first: only those change with the palette. A few thousand of the 96000 (the
+// title's: 4104 and 2658), so a palette change rewrites those and the 8x8 blocks that hold them, not the whole canvas.
+static uint32_t *g_art_texel;
+static uint16_t *g_art_val;
+static int g_art_n, g_art_n_pal;
+static uint16_t g_art_block[(400 / 8 + 1) * (240 / 8 + 1)];   // the blocks of the CGRAM pixels, each once
+static int g_art_blocks;
+static uint8_t g_art_used[256];   // the CGRAM indices the art uses ...
+static uint16_t g_art_lut[256];   // ... and their colours when it was last decoded
+static bool g_art_have, g_art_show, g_art_written, g_art_lut_ok;
 enum { kArtShift = 128, kArtX = 72, kArtY = 7 };   // the canvas' (0, 0) is plane (-72, -7): the picture's row 1 at 8
 
 bool GpuPpu_SetSceneArt(const uint16_t *idx) {   // 400x240 CGRAM indices, rows from the top; 0 = nothing
   if (!idx) return g_art_have;
-  memcpy(g_art_idx, idx, sizeof(g_art_idx));
+  int n = 0;
+  for (int i = 0; i < 400 * 240; i++) n += idx[i] != 0;
+  uint32_t *texel = (uint32_t *)realloc(g_art_texel, (size_t)(n ? n : 1) * sizeof(*texel));
+  if (texel) g_art_texel = texel;
+  uint16_t *val = (uint16_t *)realloc(g_art_val, (size_t)(n ? n : 1) * sizeof(*val));
+  if (val) g_art_val = val;
+  if (!texel || !val) return g_art_have = false;
+  static uint8_t seen[1024 * 1024 / 64 / 8];   // blocks already listed
+  memset(seen, 0, sizeof(seen));
+  memset(g_art_used, 0, sizeof(g_art_used));
+  g_art_blocks = 0;
+  int k = 0;
+  for (int pass = 0; pass < 2; pass++) {   // the CGRAM pixels, then the fixed ones
+    for (int y = 0; y < 240; y++)
+      for (int x = 0; x < 400; x++) {
+        const uint16_t v = idx[y * 400 + x];
+        if (!v || (pass == 0) != !(v & 0x8000)) continue;
+        const int t = GpuTexelIndex(x - kArtX + kArtShift, y - kArtY + kArtShift, 1024);
+        g_art_texel[k] = (uint32_t)t, g_art_val[k++] = v;
+        if (pass) continue;
+        g_art_used[v & 255] = 1;
+        const int b = t >> 6;
+        if (!(seen[b >> 3] & 1u << (b & 7))) seen[b >> 3] |= (uint8_t)(1u << (b & 7)), g_art_block[g_art_blocks++] = (uint16_t)b;
+      }
+    if (pass == 0) g_art_n_pal = k;
+  }
+  g_art_n = k;
   g_art_have = true;
-  g_art_lut_ok = false;
+  g_art_written = g_art_lut_ok = false;
   return true;
 }
 void GpuPpu_ShowSceneArt(bool on) { g_art_show = on && g_art_have; }
 
-// Decoded again whenever the plane's colour table (g_lut_m7, rebuilt each frame) is not the one it was decoded with.
+// Decoded again whenever a colour the art uses in the plane's colour table (g_lut_m7, rebuilt each frame) is not the
+// one it was decoded with. The title cycles two other colours (46, 47) every frame.
 static bool ArtRefresh(void) {
-  if (!g_art_tex.px && !GpuBackend_TexCreate(&g_art_tex, 1024, 1024)) return false;
-  if (g_art_lut_ok && memcmp(g_art_lut, g_lut_m7, sizeof(g_art_lut)) == 0) return true;
+  if (!g_art_tex.px) {
+    if (!GpuBackend_TexCreate(&g_art_tex, 1024, 1024)) return false;
+    g_art_written = g_art_lut_ok = false;
+  }
+  if (g_art_lut_ok) {
+    bool same = true;
+    for (int i = 1; i < 256 && same; i++) same = !g_art_used[i] || g_art_lut[i] == g_lut_m7[i];
+    if (same) return true;
+  }
   memcpy(g_art_lut, g_lut_m7, sizeof(g_art_lut));
   g_art_lut_ok = true;
+  g_stats.art_decodes++;
   GpuBackend_BeforeTexWrite();
-  for (int y = 0; y < 240; y++)
-    for (int x = 0; x < 400; x++)
-    {
-      const uint16_t v = g_art_idx[y * 400 + x];
-      g_art_tex.px[GpuTexelIndex(x - kArtX + kArtShift, y - kArtY + kArtShift, 1024)] =
-          v & 0x8000 ? GpuRgba5551(v & 0x7fff) : g_lut_m7[v & 255];
-    }
-  GpuBackend_TexWritten(&g_art_tex, kArtShift - kArtY, kArtShift - kArtY + 239);
+  uint16_t *px = g_art_tex.px;
+  for (int k = 0; k < g_art_n_pal; k++) px[g_art_texel[k]] = g_lut_m7[g_art_val[k] & 255];
+  if (!g_art_written) {   // the fixed colours once (the rest of the texture starts out transparent)
+    for (int k = g_art_n_pal; k < g_art_n; k++) px[g_art_texel[k]] = GpuRgba5551(g_art_val[k] & 0x7fff);
+    g_art_written = true;
+    GpuBackend_TexWritten(&g_art_tex, kArtShift - kArtY, kArtShift - kArtY + 240);
+  } else {
+    for (int b = 0; b < g_art_blocks; b++) GpuBackend_TexBlockWritten(&g_art_tex, g_art_block[b]);
+  }
   return true;
 }
 
@@ -1468,7 +1622,40 @@ static const char *EmitMode7Quads(const Ppu *ppu, const PpuLineCapture *cap, int
     const char *err = EmitMode7Pass(ppu, cap, l0, l1, math, scr, &g_art_tex, kArtShift, 4);
     if (err) return err;
   }
-  return EmitMode7Pass(ppu, cap, l0, l1, math, scr, &g_m7_tex, 0, 5);
+  // The plane's texture and the splits share a level, and a pixel keeps the first quad drawn there: they go nearest
+  // plane first, so a fill behind a nearer cell never covers it. The plane's pass goes first anyway (it decodes the cells
+  // of all, and gives the splits their planes), then the passes' quads are put in that order.
+  typedef struct { int first, end, plane; } M7Pass;
+  M7Pass pass[1 + kM7Splits];
+  const uint8_t own = g_quad_plane;
+  int n = 0;
+  pass[n] = (M7Pass){ g_out->quad_count, 0, g_m7_base_plane };
+  const char *err = EmitMode7Pass(ppu, cap, l0, l1, math, scr, &g_m7_tex, 0, 5);
+  pass[n++].end = g_out->quad_count;
+  for (int i = 0; i < kM7Splits && !err; i++) {
+    if (!g_m7_split[i].plane) continue;
+    g_quad_plane = g_m7_split[i].plane;
+    pass[n] = (M7Pass){ g_out->quad_count, 0, g_m7_split[i].plane - 1 };
+    err = EmitMode7Pass(ppu, cap, l0, l1, math, scr, &g_m7_split[i].tex, 0, 5);
+    pass[n++].end = g_out->quad_count;
+  }
+  if (!err && n > 1) {
+    static GpuQuad held[kGpuMaxQuads];
+    const int first = pass[0].first, count = g_out->quad_count - first;
+    memcpy(held, &g_out->quads[first], (size_t)count * sizeof(GpuQuad));
+    int at = first;
+    for (int k = 0; k < n; k++) {   // the nearest pass left, each time
+      int best = -1;
+      for (int i = 0; i < n; i++)
+        if (pass[i].end >= 0 && (best < 0 || pass[i].plane < pass[best].plane)) best = i;
+      const int len = pass[best].end - pass[best].first;
+      memcpy(&g_out->quads[at], &held[pass[best].first - first], (size_t)len * sizeof(GpuQuad));
+      at += len;
+      pass[best].end = -1;
+    }
+  }
+  g_quad_plane = own;
+  return err;
 }
 
 static const char *EmitMode7(const Ppu *ppu, const PpuLineCapture *cap, int l0, int l1, bool math, int scr) {
@@ -1614,6 +1801,19 @@ static void SynthHudLine(PpuLineState *dst, const PpuLineState *hud, const PpuLi
   dst->brightness = hud->brightness;
 }
 
+// The extra rows above the HUD's band carry the FX layer on (ExtendBand), but SM keeps the HUD in the first 4 rows
+// of the FX layer's own tilemap: when the layer's scroll puts those rows just above the first line, the extension
+// would draw the HUD again at the top (energy, ammo and map repeated in the first row).
+static bool FxAboveReadsHud(const PpuLineCapture *cap, const PpuLineCapture *orig) {
+  if (!g_hud_synth) return false;
+  const BgLayer *fx = &cap->line[1].bgLayer[2], *hb = &orig->line[1].bgLayer[2];
+  if (fx->tilemapAdr != hb->tilemapAdr) return false;
+  const int map_rows = fx->tilemapHigher ? 64 : 32;
+  for (int r = 1 - g_extra_top; r <= 0; r++)   // the lines above line 1, which the extension repeats
+    if ((((r + fx->vScroll) >> 3) & (map_rows - 1)) < 4) return true;
+  return false;
+}
+
 bool GpuPpu_BuildFrame(const Ppu *ppu, const PpuLineCapture *cap, GpuFrame *out, const char **reason) {
   static LineInfo info[kPpuCaptureLines];
   // The lines drawn: the capture's, or a copy changed where the HUD and extra rows need it.
@@ -1670,8 +1870,15 @@ bool GpuPpu_BuildFrame(const Ppu *ppu, const PpuLineCapture *cap, GpuFrame *out,
   // exists it must take note of them on every frame, mode 7 or not.
   // Mode 7 is rare (title, intro, Ceres, ending): after 2 s without it the plane is freed
   // (2 MB) and tracking stops; the next use decodes it again.
-  if (g_m7_tex.px && g_frame_no - g_m7_used_frame > 120) GpuBackend_TexFree(&g_m7_tex);
+  if (g_m7_tex.px && g_frame_no - g_m7_used_frame > 120) {
+    GpuBackend_TexFree(&g_m7_tex);
+    for (int i = 0; i < kM7Splits; i++) {
+      if (g_m7_split[i].tex.px) GpuBackend_TexFree(&g_m7_split[i].tex);
+      g_m7_split[i].plane = 0;
+    }
+  }
   if (g_m7_tex.px) {
+    M7SplitUpdate();
     M7Track(ppu);
     g_m7_tracked_frame = g_frame_no;
   }
@@ -1705,6 +1912,13 @@ bool GpuPpu_BuildFrame(const Ppu *ppu, const PpuLineCapture *cap, GpuFrame *out,
       b->subtract = st->subtractColor;
       b->half = st->halfColor;
       b->fixed = (uint16_t)(st->fixedColorR | st->fixedColorG << 5 | st->fixedColorB << 10);
+      for (int l = l0; l <= l1; l++) {
+        const PpuLineState *ls = &cap->line[l];
+        const uint16_t c = (uint16_t)(ls->fixedColorR | ls->fixedColorG << 5 | ls->fixedColorB << 10);
+        out->row_fixed[l - 1 + kGpuMaxExtraRows] = c;
+        b->fixed_rows |= c != b->fixed;
+      }
+      for (int y = -g_extra_top; l0 == 1 && y < 0; y++) out->row_fixed[y + kGpuMaxExtraRows] = b->fixed;   // line 1's
       bool sprites_built = false;
       b->main_first = out->quad_count;
       if ((*reason = EmitScreen(ppu, cap, inf->main, l0, l1, true, &sprites_built))) { ok = false; break; }
@@ -1719,7 +1933,7 @@ bool GpuPpu_BuildFrame(const Ppu *ppu, const PpuLineCapture *cap, GpuFrame *out,
           (*reason = EmitScreen(ppu, cap, inf->sub, l0, l1, false, &sprites_built))) { ok = false; break; }
       b->sub_count = out->quad_count - b->sub_first;
       const bool hud = NarrowBg3(cap, l0, l1);
-      if (l0 == 1 && g_extra_top) ExtendBand(out, b, true, g_extra_top, hud);
+      if (l0 == 1 && g_extra_top) ExtendBand(out, b, true, g_extra_top, hud || FxAboveReadsHud(cap, orig));
     }
     if (l0 == 1) b->y0 = -g_extra_top;
     l0 = l1 + 1;

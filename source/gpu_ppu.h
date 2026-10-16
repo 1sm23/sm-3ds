@@ -88,7 +88,8 @@ typedef struct {
   bool clip;
   bool math;
   bool add_subscreen, subtract, half;
-  uint16_t fixed;          // BGR555
+  uint16_t fixed;          // BGR555, of its first row
+  bool fixed_rows;         // the fixed colour changes between its rows (a gradient): GpuBandFixed
   int main_first, main_count;   // quads; sprites come first
   int sub_first, sub_count;
   // A colour window that splits lines: rectangles where, on top of `clip` and `math`,
@@ -137,7 +138,14 @@ typedef struct {
   // the HUD keeps its place on the screen while the view leans, also onto rows of other
   // bands. Each pixel takes the brightness of the band its row belongs to.
   int hud_first, hud_count;
+  uint16_t row_fixed[kGpuMaxExtraRows + kGpuRows + kGpuMaxExtraRows];   // per row from -kGpuMaxExtraRows (GpuBandFixed)
 } GpuFrame;
+
+// The fixed colour of row `row` (y0 <= row < y1) of band `b`. Lines that differ only in it are one band (the title's and
+// the Ceres escape's gradients change it every few lines, which made up to 32 bands, each costing its passes again).
+static inline uint16_t GpuBandFixed(const GpuFrame *f, const GpuBand *b, int row) {
+  return b->fixed_rows ? f->row_fixed[row + kGpuMaxExtraRows] : b->fixed;
+}
 
 // Implemented by the backend. Texels start out as zero (transparent).
 bool GpuBackend_TexCreate(GpuTex *t, int w, int h);
@@ -184,6 +192,8 @@ void GpuPpu_SetHudY(int y);
 // With the 3D on in gameplay, sprites of a higher priority cover those of a lower one whatever their OAM order (the SNES
 // goes by OAM order alone), so an enemy on a nearer plane than Samus is also drawn over her. Off: the SNES's order.
 void GpuPpu_SetSpritePriorityOrder(bool on);
+// Sprites of an OAM priority above `cap` (0..3) are drawn as `cap` (SmPlanes_SpriteCap); 3 = as they are.
+void GpuPpu_SetSpriteCap(int cap);
 
 // Added to a BG layer's horizontal scroll on every line of the next frames (0..2 = BG1..3).
 void GpuPpu_SetLayerShiftX(int layer, int dx);
@@ -223,6 +233,20 @@ void GpuPpu_SetPlaneRule(int (*rule)(int layer, int prio));
 // GpuQuad.plane, over the layer's own rule.
 // NULL = none.
 void GpuPpu_SetSlotPlanes(int (*slot_planes)(int layer, int tw, int th, uint8_t *grid));
+
+// Mode 7 cells that go to another stereo plane than the plane's own (source/sm_m7_planes.inc): the hook returns the
+// StereoPlane of cell `cell` (0..16383, row-major 128 x 128) showing tile `tile` (0..255), or -1 to keep the plane's; it
+// is asked when the cell is decoded. `key` names the hook's current rules (the room): when it changes every cell is
+// decoded again. Cells sent to a plane are decoded into a 1024x1024 texture of that plane (at most two planes; more go to
+// the plane's own) and left transparent in the others, drawn with the same rows and carrying the plane in
+// GpuQuad.plane. NULL = none. `base_plane` is the plane's own (where the cells the hook leaves go). In a texture of a
+// plane farther than a cell's, that cell shows the nearest cell on that plane above it, else below it, at most
+// `fill_reach` cells away (0 = none); `fill_mode` (NULL = always so) may say 1 for the nearest in its row instead, or -1
+// for no fill: what the other eye sees
+// beside a nearer cell, which has no picture of its own behind it. Only under the cell's own pixels, so the picture
+// without 3D does not change.
+void GpuPpu_SetMode7Planes(int (*cell_plane)(int cell, int tile), int key, int base_plane, int fill_reach,
+                           int (*fill_mode)(int cell));
 
 // Sprites do not wrap from the bottom to the top (SM's WIDE view: its HUD rows show
 // sprites, which on the SNES never showed there).
@@ -270,6 +294,7 @@ bool GpuPpu_BuildFrame(const Ppu *ppu, const PpuLineCapture *cap, GpuFrame *out,
 typedef struct {
   int surfaces, tiles_decoded, sprites, screen_rows_composed, m7_cells_decoded;
   int tiles_reused, tiles_fresh, tiles_map, tiles_pal, tiles_char, tiles_plane;
+  int art_decodes;   // the title's scene art decoded again (its colours changed)
   int tiles_deferred;   // BG tiles whose char data changed but whose decode waits for a later frame (GpuPpu_SetDeferTiles)   // tiles_reused: of tiles_decoded, copied from an identical tile decoded earlier in the frame   // why the BG tiles were decoded: new surface, tilemap entry changed, palette row changed, char data changed, plane fix changed
   // Time per stage of the last build, in g_gpu_ppu_clock units (0 without a clock):
   // line analysis + bands, VRAM/CGRAM diff, sprites, BG surfaces and quads, shadow copy.

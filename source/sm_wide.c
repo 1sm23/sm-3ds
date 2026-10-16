@@ -310,9 +310,10 @@ static void Bg2Shift(void) {
     g_bg2_dx = 0;
     return;
   }
-  // An enemy that draws its body in BG2 (Kraid, Draygon) moves it with BG1 and its own sprites: no parallax to restore, or
-  // the body slides away from the arms and hands (Draygon: the lean changes as Samus climbs).
-  if (g_rtl_enemy_bg2_room == room_ptr && (room_ptr == 0xA59F || room_ptr == 0xDA60)) {   // Kraid's and Draygon's rooms
+  // An enemy that draws its body in BG2 (Kraid, Draygon, Mother Brain) moves it with BG1 and its own sprites: no parallax to
+  // restore, or the body slides away from the arms and hands (Draygon: the lean changes as Samus climbs; Mother Brain: the
+  // torso apart from her head and legs).
+  if (g_rtl_enemy_bg2_room == room_ptr && (room_ptr == 0xA59F || room_ptr == 0xDA60 || room_ptr == 0xDD58)) {   // Kraid's, Draygon's and Mother Brain's rooms
     g_bg2_dx = 0;
     return;
   }
@@ -635,6 +636,33 @@ bool SmWide_Mode7(void) { return g_mode7; }
 // y 409, camera 138, picture's top at row 206; the same for x: 62 columns left of her, 512 between copies). Only that
 // copy is drawn: screen columns [x0, x1), output rows [y0, y1).
 bool SmWide_Bg2Clip(int *x0, int *x1, int *y0, int *y1) {
+  // Mother Brain's torso (phases 2 and 3, once the room's BG2 is hers: layer2_scroll_x 1: the game writes 257 to the pair; the room's own value is 0xC1) is a picture of ~14 x 11 tiles at
+  // the top left of BG2's tilemap, which repeats every 256 columns: with her at the far left a second torso showed in the
+  // right margin. The game scrolls it with BG2HOFS = 34 - her x (MotherBrain_MoveBodyDown): the picture's left edge is at
+  // -BG2HOFS.
+  if (room_ptr == 0xDD58 && g_rtl_enemy_bg2_room == room_ptr && layer2_scroll_x == 1) {
+    *x0 = -(int16)reg_BG2HOFS;
+    *x1 = *x0 + 200;   // the picture is ~112 wide; less than the 256 between copies
+    *y0 = -4096;       // copies above and below are never in view
+    *y1 = 4096;
+    return true;
+  }
+  // Crocomire's body is BG2 too. While she is more than 128 columns beyond either screen edge the game parks it by
+  // scrolling BG2 to 256 (Crocomire_8BA4): off the 256-column view, but the tilemap repeats and the right margin showed it
+  // fixed on the screen however far Samus walked away from her.
+  // Shown, her picture starts at screen column -BG2HOFS and is longer than what is left of the tilemap's 512 columns: its end
+  // wrapped round to the left margin (the tail, on the wrong side of the screen). Only that one copy is drawn.
+  if (room_ptr == 0xA98D && g_rtl_enemy_bg2_room == room_ptr) {
+    if (reg_BG2HOFS == 256) {
+      *x0 = *x1 = 0;
+    } else {
+      *x0 = -(int16)reg_BG2HOFS;
+      *x1 = *x0 + 512;
+    }
+    *y0 = -4096;
+    *y1 = 4096;
+    return true;
+  }
   if (room_ptr != 0xDA60 || enemy_gfx_drawn_hook.bank != 165 || enemy_gfx_drawn_hook.addr != FUNC16(Draygon_Func_36))
     return false;
   const Enemy_Draygon *E = Get_Draygon(0);

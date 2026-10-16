@@ -2,8 +2,8 @@
 """Local stand-in for the GitHub releases API, to test the 3DS self-updater.
 
 Serves /releases.json in the same shape as
-GET /repos/{owner}/{repo}/releases (newest first) plus the .cia files
-themselves, so the console can be pointed at this machine instead of GitHub.
+GET /repos/{owner}/{repo}/releases (newest first) plus the .cia and/or .3dsx
+files themselves, so the console can be pointed at this machine instead of GitHub.
 
   # 1. serve a CIA and pretend it is release v9.9.9
   tools/update-mock-server.py --cia output/SuperMetroid3DSPort.cia --tag v9.9.9
@@ -13,6 +13,11 @@ themselves, so the console can be pointed at this machine instead of GitHub.
   #    then OPTIONS > UPDATES (or relaunch with auto update on). Delete the file afterwards.
   #    Do NOT accept the install while pointed here: it would install this same CIA as a
   #    fake version.
+
+  # the Homebrew Launcher build: --3dsx (with or without --cia). Accepting is harmless there:
+  # the game only puts the served file over its own .3dsx, and the version it shows afterwards
+  # is the served build's own, not the fake tag.
+  tools/update-mock-server.py --3dsx output/SuperMetroid3DSPort.3dsx --tag v9.9.9
 
 Add --beta-tag v9.9.10 to also publish a newer prerelease and exercise the
 "releases + betas" channel. Every release carries a release body with a
@@ -57,7 +62,8 @@ def release_body(tag, notes):
     )
 
 
-def make_handler(base, cia_path, releases, notes):
+def make_handler(base, files, releases, notes):
+    """`files`: published name ("sm-3ds.cia", "sm-3ds.3dsx") -> local path."""
     body = json.dumps(
         [
             {
@@ -65,16 +71,13 @@ def make_handler(base, cia_path, releases, notes):
                 "prerelease": pre,
                 "body": release_body(tag, notes),
                 "assets": [
-                    {
-                        "name": "sm-3ds.cia",
-                        "browser_download_url": f"{base}/{tag}/sm-3ds.cia",
-                    }
+                    {"name": name, "browser_download_url": f"{base}/{tag}/{name}"}
+                    for name in files
                 ],
             }
             for tag, pre in releases
         ]
     ).encode()
-    size = os.path.getsize(cia_path)
 
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
@@ -84,13 +87,14 @@ def make_handler(base, cia_path, releases, notes):
                 self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
                 self.wfile.write(body)
-            elif self.path.endswith("/sm-3ds.cia"):
+            elif self.path.rsplit("/", 1)[-1] in files:
+                path = files[self.path.rsplit("/", 1)[-1]]
                 self.send_response(200)
                 self.send_header("Content-Type", "application/octet-stream")
-                self.send_header("Content-Length", str(size))
+                self.send_header("Content-Length", str(os.path.getsize(path)))
                 self.end_headers()
                 try:
-                    with open(cia_path, "rb") as f:
+                    with open(path, "rb") as f:
                         while chunk := f.read(65536):
                             self.wfile.write(chunk)
                 except (BrokenPipeError, ConnectionResetError):
@@ -108,12 +112,20 @@ def make_handler(base, cia_path, releases, notes):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--cia", required=True, help="CIA to serve for every release")
+    ap.add_argument("--cia", help="CIA to serve for every release")
+    ap.add_argument("--3dsx", dest="hb", help="3dsx to serve for every release (the Homebrew Launcher build)")
     ap.add_argument("--tag", default="v9.9.9", help="stable release tag to publish")
     ap.add_argument("--beta-tag", help="also publish this tag as a prerelease (listed first)")
     ap.add_argument("--notes-file", help="text for the notes block of every release (default: a sample)")
     ap.add_argument("--port", type=int, default=8000)
     args = ap.parse_args()
+    if not args.cia and not args.hb:
+        ap.error("give --cia, --3dsx or both")
+    files = {}
+    if args.cia:
+        files["sm-3ds.cia"] = args.cia
+    if args.hb:
+        files["sm-3ds.3dsx"] = args.hb
 
     notes = SAMPLE_NOTES
     if args.notes_file:
@@ -125,9 +137,9 @@ def main():
         releases.append((args.beta_tag, True))
     releases.append((args.tag, False))
 
-    print(f"Serving {args.cia} as {[t for t, _ in releases]}")
+    print(f"Serving {', '.join(files.values())} as {[t for t, _ in releases]}")
     print(f"Set on the 3DS:  update_url={base}/releases.json")
-    ThreadingHTTPServer(("0.0.0.0", args.port), make_handler(base, args.cia, releases, notes)).serve_forever()
+    ThreadingHTTPServer(("0.0.0.0", args.port), make_handler(base, files, releases, notes)).serve_forever()
 
 
 if __name__ == "__main__":

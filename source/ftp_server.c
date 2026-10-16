@@ -1,6 +1,7 @@
 #include "ftp_server.h"
 
 #include "cia_install.h"
+#include "hb_install.h"
 #include "debug_link.h"
 #include "ftp_credentials.h"
 #include "net_service.h"
@@ -387,7 +388,8 @@ static void CmdStor(Session* s, const char* arg, bool append) {
         return;
     }
     const size_t len = strlen(vpath);
-    const bool cia = len > 4 && strcasecmp(vpath + len - 4, ".cia") == 0;
+    const bool cia = (len > 4 && strcasecmp(vpath + len - 4, ".cia") == 0) ||
+                     (len > 5 && strcasecmp(vpath + len - 5, ".3dsx") == 0);   /* the Homebrew Launcher build's */
     if (cia) {
         sNotice = "RECEIVING THE INSTALLER";
         sRecvDone = 0, sRecvTotal = sAllo;
@@ -529,7 +531,10 @@ static void HandleSession(int ctrl) {
             s->rnfr[0] = 0;
         } else if (!strcmp(line, "SITE")) {
             /* SITE INSTALL <path>: install a CIA of this game from the SD card
-             * and relaunch into it (./build_3ds.sh --install does this). */
+             * and relaunch into it (./build_3ds.sh --install does this). The
+             * Homebrew Launcher build takes a .3dsx instead, puts it over the
+             * running file and starts again through Luma's loader (or quits to
+             * the launcher without it). */
             char* sub = arg;
             char* path = strchr(sub, ' ');
             if (path) *path++ = 0;
@@ -544,11 +549,22 @@ static void HandleSession(int ctrl) {
                 char error[96];
                 sNotice = "INSTALLING";
                 sPhase = 2;
-                const bool installed = CiaInstall_File(vpath, error, sizeof(error));
+                const bool hb = HbInstall_IsHomebrew();
+                bool installed;
+                if (hb) {
+                    char sdpath[FTP_PATH_MAX + 8];
+                    snprintf(sdpath, sizeof(sdpath), "sdmc:%s", vpath);
+                    installed = HbInstall_File(sdpath, error, sizeof(error));
+                } else {
+                    installed = CiaInstall_File(vpath, error, sizeof(error));
+                }
                 if (installed) {
-                    FtpLog("ftp: installed %s, relaunching", vpath);
-                    Reply(s, "200 Installed %s; relaunching the game.", vpath);
-                    sNotice = "RESTARTING IN";
+                    const bool closes = hb && !HbInstall_CanRelaunch();   /* a 3dsx with no Luma loader */
+                    FtpLog("ftp: installed %s, %s", vpath, closes ? "quitting to the Homebrew Launcher" : "relaunching");
+                    if (closes) Reply(s, "200 Installed %s as %s; quitting to the Homebrew Launcher.", vpath, HbInstall_Path());
+                    else if (hb) Reply(s, "200 Installed %s as %s; relaunching the game.", vpath, HbInstall_Path());
+                    else Reply(s, "200 Installed %s; relaunching the game.", vpath);
+                    sNotice = closes ? "CLOSING IN" : "RESTARTING IN";
                     sRelaunchAt = osGetTime() + FTP_RELAUNCH_DELAY_MS;
                     sPhase = 3;
                     sRelaunch = true;
@@ -559,7 +575,8 @@ static void HandleSession(int ctrl) {
                     Reply(s, "550 Install failed: %s", error);
                 }
             } else if (!strcmp(sub, "INSTALL")) {
-                Reply(s, "501 SITE INSTALL <path to a .cia of this game>");
+                Reply(s, HbInstall_IsHomebrew() ? "501 SITE INSTALL <path to a .3dsx of this game>"
+                                                : "501 SITE INSTALL <path to a .cia of this game>");
             } else if (sRestricted) {
                 Reply(s, "504 Unknown SITE command.");
             } else {

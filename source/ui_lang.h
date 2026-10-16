@@ -33,7 +33,7 @@ typedef enum {
   kStrRaSortRecent, kStrRaPoints, kStrRaLockedState, kStrRaUnlockedState, kStrRaMissable, kStrRaProgression,
   kStrRaWin, kStrClose,
   kStrUpdate, kStrUpdates, kStrUpdTap, kStrUpdChecking, kStrUpdUpToDate, kStrUpdNew, kStrUpdInstalled,
-  kStrUpdError, kStrUpdAsk, kStrUpdAsk2, kStrUpdInstalling, kStrUpdRestart, kStrUpdFailed, kStrUpdKept,
+  kStrUpdError, kStrUpdAsk, kStrUpdAsk2, kStrUpdInstalling, kStrUpdRestart, kStrUpdReopen, kStrUpdFailed, kStrUpdKept,
   kStrYes, kStrNo, kStrOk,
   kStrNewState, kStrStatesNone, kStrNoImage, kStrMark, kStrTime, kStrLoad, kStrSaveOver, kStrDelete, kStrStateDeleted, kStrWait,
   kStrPaceLock, kStrPaceNoSkip, kStrViewOriginal, kStrViewWide, kStrChannel, kStrChanStable, kStrChanBeta,

@@ -24,8 +24,8 @@ and 0 for Release ones, so stable CIAs have none of this.
 |---|---|
 | MAP | Tap a cell to pick a room, WARP HERE loads it (DOOR n/m picks which door into it). See the decisions log for how the warp works. |
 | STATUS | Tap an item or beam to add/remove it; ALL (the free cell after the items) gives every item and beam, and lights up when they are all there. GOD = energy refilled every frame. MAX = capacities to the maximum and ammo kept full; off gives the old capacities back. MAP STATIONS boxes: each tap cycles real -> map station used (all cells show) -> every cell explored -> real (restored exactly). Unlocking a map is what makes its rooms visible for a warp. |
-| DEBUG | Timings, game state, raw boss bits, and the DEBUG TOOLS window. |
 | STATES | 10 save-state slots (all builds). |
+| DEBUG | Timings, game state, raw boss bits, and the DEBUG TOOLS window. |
 
 DEBUG TOOLS window: SCREEN DUMP, FRAME DUMP, LOG TO SD (below), LOG MARK, SCENE REC
 (below), PERF RECORDER, RENDERER
@@ -120,6 +120,15 @@ says so on any tab, in a box in the middle (`NEW BUILD`: `RECEIVING THE INSTALLE
 A CIA of another title is refused. The first build with this feature has to arrive by FBI or
 ftpd as before: there is no server to talk to until it runs once.
 
+The game opened as a `.3dsx` from the Homebrew Launcher takes a `.3dsx` instead (a CIA is refused
+there: the installer only sees the launcher's host title). `SITE INSTALL <path>.3dsx` moves it over
+the running file (the path the launcher started, `argv[0]`; the old one is kept as `.bak` until the
+new one is in place; the romfs, which is that file, is closed first) and the game relaunches 10 s
+later through Luma's loader (`hb:ldr`, as the Homebrew Launcher opens an app). Without Luma it quits
+to the launcher instead (`CLOSING IN 7 S`). `./build_3ds.sh --3dsx --install IP` builds the 3dsx,
+uploads it to `/3ds/Super Metroid 3DS/update/dev.3dsx` and installs it. A file that does not start
+with the 3dsx magic is refused.
+
 ### Remote control
 
 While the server runs, the PC can drive the game through SITE commands
@@ -205,7 +214,7 @@ once landed in slot 00 (issue #8).
 | `sm-dump-NNNN-game.txt` | game state, room, Samus |
 | `sm-dump-NNNN-frame.txt` | FRAME DUMP only: every PPU register write of the frame (below) |
 | `sm-dump-NNNN-gpu.rgb` | GPU CHECK only: the GPU renderer's output read back, like `-top.rgb` |
-| `sm-log-NN.txt` | the SD log. Debug builds start it at boot (one per session; LOG TO SD toggles it): console model, the core-1 time limit granted, every settings change (CPU clock, renderer, audio, display mode, WIDE, pause), and every 5 s the speed, shown fps, work/logic/draw times, the GPU build stages, submit and GPU wait, bands and quads, tiles and mode 7 cells decoded, and the audio thread's health (block time, callbacks slower than their buffer, late starts); then each exit step |
+| `sm-log-NN.txt` | the SD log. Debug builds start it at boot (one per session; LOG TO SD toggles it): console model, the core-1 time limit granted, every settings change (CPU clock, renderer, audio, display mode, WIDE, pause), and every 5 s the speed, shown fps, work/logic/draw times, the GPU build stages, submit and GPU wait, bands and quads, tiles and mode 7 cells decoded, how many times the title's WIDE scene art was decoded again, and the audio thread's health (block time, callbacks slower than their buffer, late starts); then each exit step |
 | `sm-exit.txt` | the steps of the last exit, in every build: if closing hangs, the last line says where |
 | `sm-perf-NN.csv` (summarise it with `tools/perf-csv/analyze.py`) | frame-time recorder, one row per game frame: `logic_ms, draw_ms, audio_ms` (the audio thread), `work_ms` (the whole loop iteration), `shown`, `game_state, area, room` (0 right after a save state is loaded), the audio block's parts, then, for a frame that drew: `gpu_build_ms, gpu_wait_ms, gpu_submit_ms`, inside the build `lines_ms, diff_ms, sprites_ms, bg_ms`, `tiles` decoded, `quads`, `bands`, the texture upload (`tex_copy_ms`, `tex_flush_ms`, `tex_runs` = cache-flush calls, `tex_kb` copied), `gpu_draw_ms`, `gpu_proc_ms`, `cmdbuf` (the GPU's own time for the last frame it finished and the command buffer use, citro3d's counters), `dp_ms` (the whole `GpuPpu3ds_DrawAndPresent` call), and for every frame `ui_ms` (`BottomUi_Frame`, the bottom screen's redraw), `present_ms` (both screens' conversion + swap) and `present_wait_ms` (the vblank wait inside it); then `tiles_reused` (of the tiles decoded, copied from an identical one decoded earlier in the frame) and `why_fresh, why_map, why_pal, why_char, why_plane` (why they were decoded: a new surface, the tilemap entry, the palette row, the char data or the plane fix changed); `tiles_deferred`, `tiles_pending` (the spread tile decodes), `gpu_test` (GPU TEST), `eyes` (what the GPU drew: 2 with the 3D on, slider up or FORCE 3D; 0 when it did not draw) and `slider` (the 3D slider, 0-1), so one recording can switch the 3D on and off; `submit_tex_ms, submit_eyes_ms, submit_end_ms` split `gpu_submit_ms` (copying the decoded texels to the textures, building both eyes' commands, `C3D_FrameEnd` with the vertex flush). The GPU sits idle during the submit, so with the 3D on a frame lasts about the GPU's own time plus the submit. `work_ms - logic_ms - draw_ms` is what the bottom screen cost |
 | `sm-rec-NNNN.bin` | scene recorder (below) |
