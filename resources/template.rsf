@@ -70,9 +70,9 @@ AccessControlInfo:
   MemoryType                    : Application # Application/System/Base
   SystemMode                    : $(APP_SYSTEM_MODE) # 64MB(Default)/96MB/80MB/72MB/32MB
   IdealProcessor                : 0
-  AffinityMask                  : 1
+  AffinityMask                  : 3 # cores 0 and 1: with 1 the CIA was refused 80/70/50 % of core 1 (PLAN P4.20 log), as mzm (9eea72a9)
   Priority                      : 16
-  MaxCpu                        : 0x9E # Default
+  MaxCpu                        : 0xD0 # bit 7 = multi mode (as 0x9E), low 7 bits = the most core 1 time APT_SetAppCpuTimeLimit may ask: 0x50 = 80 % (0x9E capped it at 30; Luma PM refuses more with D8E05BF4)
   HandleTableSize               : 0x200
   DisableDebug                  : false
   EnableForceDebug              : false
