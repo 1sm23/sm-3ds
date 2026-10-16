@@ -3,6 +3,7 @@
 #include "variables.h"
 #include "funcs.h"
 #include "enemy_types.h"
+#include "sm_rtl.h"
 
 
 #define g_word_A4B89D ((uint16*)RomFixedPtr(0xa4b89d))
@@ -453,19 +454,22 @@ void Crocomire_8BA4(void) {  // 0xA48BA4
   E1->base.x_pos = E1->crocom_var_A + E0->base.x_pos;
   E1->base.y_pos = E0->base.y_pos;
   uint16 x_pos = E0->base.x_pos;
+  // 3DS port (WIDE): the body is parked (BG2 scrolled to 256) only when it is beyond the margins too, or it vanished while
+  // still in view.
+  const uint16 ml = g_rtl_wide_margin_left, mr = g_rtl_wide_margin_right;
   if ((int16)(x_pos - layer1_x_pos) >= 0) {
-    if (sign16(E0->base.x_pos - 128 - (layer1_x_pos + 256)))
+    if (sign16(E0->base.x_pos - 128 - (layer1_x_pos + 256 + mr)))
       goto LABEL_3;
 LABEL_6:
     reg_BG2HOFS = 256;
     return;
   }
-  if ((int16)(x_pos + 128 - layer1_x_pos) < 0)
+  if ((int16)(x_pos + 128 + ml - layer1_x_pos) < 0)
     goto LABEL_6;
 LABEL_3:;
   uint16 v6 = layer1_x_pos - E0->base.x_pos + 51;
   uint16 v4 = abs16(v6);
-  if (!sign16(v4 - 284))
+  if (!sign16(v4 - 284 - ((int16)v6 < 0 ? mr : ml)))
     v6 = 256;
   reg_BG2HOFS = v6;
 }
