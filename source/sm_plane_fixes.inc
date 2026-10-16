@@ -2423,6 +2423,14 @@ SM_PLANE_FIX(0xCD13, 1, 12, 15, 0x853C, 0xF, kStereoFront)  /* -> FRONT */
 SM_PLANE_FIX(0xCD13, 1, 13, 15, 0x813C, 0xF, kStereoFront)  /* -> FRONT */
 SM_PLANE_FIX(0xCD13, 1, 14, 15, 0x853C, 0xF, kStereoFront)  /* -> FRONT */
 SM_PLANE_FIX(0xCD13, 1, 15, 15, 0x813C, 0xF, kStereoFront)  /* -> FRONT */
+SM_PLANE_FIX(0xCD13, 1, 0, 6, 0x95C1, 0xF, kStereoFront)  /* -> FRONT, the closed door */
+SM_PLANE_FIX(0xCD13, 1, 1, 6, 0xC5C0, 0xF, kStereoFront)  /* -> FRONT, the closed door */
+SM_PLANE_FIX(0xCD13, 1, 0, 7, 0x95E1, 0xF, kStereoFront)  /* -> FRONT, the closed door */
+SM_PLANE_FIX(0xCD13, 1, 1, 7, 0xD5E0, 0xF, kStereoFront)  /* -> FRONT, the closed door */
+SM_PLANE_FIX(0xCD13, 1, 0, 8, 0x9DE1, 0xF, kStereoFront)  /* -> FRONT, the closed door */
+SM_PLANE_FIX(0xCD13, 1, 1, 8, 0xDDE0, 0xF, kStereoFront)  /* -> FRONT, the closed door */
+SM_PLANE_FIX(0xCD13, 1, 0, 9, 0x9DC1, 0xF, kStereoFront)  /* -> FRONT, the closed door */
+SM_PLANE_FIX(0xCD13, 1, 1, 9, 0xDDC0, 0xF, kStereoFront)  /* -> FRONT, the closed door */
 SM_PLANE_FIX(0xD30B, 1, 0, 0, 0x8044, 0xF, kStereoPlay)  /* -> PLAY */
 SM_PLANE_FIX(0xD30B, 1, 1, 0, 0x8044, 0xF, kStereoPlay)  /* -> PLAY */
 SM_PLANE_FIX(0xD30B, 1, 2, 0, 0x8044, 0xF, kStereoPlay)  /* -> PLAY */
@@ -4089,6 +4097,14 @@ SM_TILE_PRIO(0xCD13, 1, 12, 13, 0x8705, 0xF, 1)  /* drawn with priority 1 */
 SM_TILE_PRIO(0xCD13, 1, 13, 13, 0x8305, 0xF, 1)  /* drawn with priority 1 */
 SM_TILE_PRIO(0xCD13, 1, 14, 13, 0x8705, 0xF, 1)  /* drawn with priority 1 */
 SM_TILE_PRIO(0xCD13, 1, 15, 13, 0x8305, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 0, 6, 0x95C1, 0xF, 1)  /* drawn with priority 1, the closed door */
+SM_TILE_PRIO(0xCD13, 1, 1, 6, 0xC5C0, 0xF, 1)  /* drawn with priority 1, the closed door */
+SM_TILE_PRIO(0xCD13, 1, 0, 7, 0x95E1, 0xF, 1)  /* drawn with priority 1, the closed door */
+SM_TILE_PRIO(0xCD13, 1, 1, 7, 0xD5E0, 0xF, 1)  /* drawn with priority 1, the closed door */
+SM_TILE_PRIO(0xCD13, 1, 0, 8, 0x9DE1, 0xF, 1)  /* drawn with priority 1, the closed door */
+SM_TILE_PRIO(0xCD13, 1, 1, 8, 0xDDE0, 0xF, 1)  /* drawn with priority 1, the closed door */
+SM_TILE_PRIO(0xCD13, 1, 0, 9, 0x9DC1, 0xF, 1)  /* drawn with priority 1, the closed door */
+SM_TILE_PRIO(0xCD13, 1, 1, 9, 0xDDC0, 0xF, 1)  /* drawn with priority 1, the closed door */
 SM_LAYER_PLANE(0xCD13, 1, 1, kStereoFront)  /* -> FRONT */
 SM_LAYER_PLANE(0xDF45, 4, 2, kStereoFront)  /* -> FRONT */
 SM_LAYER_PLANE(0xE0B5, 2, 0, kStereoPlay)  /* -> PLAY */
