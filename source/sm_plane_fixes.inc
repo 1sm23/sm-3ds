@@ -4073,6 +4073,22 @@ SM_TILE_PRIO(0xCD13, 1, 0, 12, 0x8301, 0xF, 1)  /* drawn with priority 1 */
 SM_TILE_PRIO(0xCD13, 1, 1, 12, 0x8302, 0xF, 1)  /* drawn with priority 1 */
 SM_TILE_PRIO(0xCD13, 1, 14, 12, 0x8702, 0xF, 1)  /* drawn with priority 1 */
 SM_TILE_PRIO(0xCD13, 1, 15, 12, 0x8301, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 0, 13, 0x8705, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 1, 13, 0x8305, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 2, 13, 0x8705, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 3, 13, 0x8305, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 4, 13, 0x8705, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 5, 13, 0x8305, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 6, 13, 0x8705, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 7, 13, 0x8305, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 8, 13, 0x8705, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 9, 13, 0x8305, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 10, 13, 0x8705, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 11, 13, 0x8305, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 12, 13, 0x8705, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 13, 13, 0x8305, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 14, 13, 0x8705, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xCD13, 1, 15, 13, 0x8305, 0xF, 1)  /* drawn with priority 1 */
 SM_LAYER_PLANE(0xDF45, 4, 2, kStereoFront)  /* -> FRONT */
 SM_LAYER_PLANE(0xE0B5, 2, 0, kStereoPlay)  /* -> PLAY */
 SM_LAYER_PLANE(0xE0B5, 2, 1, kStereoPlay)  /* -> PLAY */
