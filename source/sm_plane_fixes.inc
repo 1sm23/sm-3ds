@@ -3906,6 +3906,12 @@ SM_PLANE_FIX(0x968F, 1, 14, 2, 0x82F4, 0xF, kStereoPlay)  /* -> PLAY */
 SM_PLANE_FIX(0x968F, 1, 14, 13, 0x82F4, 0xF, kStereoPlay)  /* -> PLAY */
 SM_PLANE_FIX(0x968F, 1, 14, 14, 0x82F4, 0xF, kStereoPlay)  /* -> PLAY */
 SM_PLANE_FIX(0x968F, 1, 14, 15, 0x82F4, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xDF8D, 1, 8, 13, 0x8108, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xDF8D, 1, 9, 13, 0x8109, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xDF8D, 1, 10, 13, 0x8108, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xDF8D, 1, 21, 13, 0x8109, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xDF8D, 1, 22, 13, 0x8108, 0xF, kStereoPlay)  /* -> PLAY */
+SM_PLANE_FIX(0xDF8D, 1, 23, 13, 0x8109, 0xF, kStereoPlay)  /* -> PLAY */
 SM_TILE_PRIO(0x9C5E, 2, 26, 12, 0x01E5, 0xF, 1)  /* drawn with priority 1 */
 SM_TILE_PRIO(0x9C5E, 2, 27, 12, 0x01E6, 0xF, 1)  /* drawn with priority 1 */
 SM_TILE_PRIO(0x9C5E, 2, 28, 12, 0x01E5, 0xF, 1)  /* drawn with priority 1 */
@@ -4296,6 +4302,12 @@ SM_TILE_PRIO(0xCD13, 1, 0, 8, 0x9DE1, 0xF, 1)  /* drawn with priority 1, the clo
 SM_TILE_PRIO(0xCD13, 1, 1, 8, 0xDDE0, 0xF, 1)  /* drawn with priority 1, the closed door */
 SM_TILE_PRIO(0xCD13, 1, 0, 9, 0x9DC1, 0xF, 1)  /* drawn with priority 1, the closed door */
 SM_TILE_PRIO(0xCD13, 1, 1, 9, 0xDDC0, 0xF, 1)  /* drawn with priority 1, the closed door */
+SM_TILE_PRIO(0xDF8D, 1, 8, 13, 0x8108, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xDF8D, 1, 9, 13, 0x8109, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xDF8D, 1, 10, 13, 0x8108, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xDF8D, 1, 21, 13, 0x8109, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xDF8D, 1, 22, 13, 0x8108, 0xF, 1)  /* drawn with priority 1 */
+SM_TILE_PRIO(0xDF8D, 1, 23, 13, 0x8109, 0xF, 1)  /* drawn with priority 1 */
 SM_LAYER_PLANE(0xCD13, 1, 1, kStereoFront)  /* -> FRONT */
 SM_LAYER_PLANE(0xDF45, 4, 2, kStereoFront)  /* -> FRONT */
 SM_LAYER_PLANE(0xE0B5, 2, 0, kStereoPlay)  /* -> PLAY */
