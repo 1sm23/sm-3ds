@@ -105,6 +105,8 @@ extensions, 8 solid, 9 door, A spike, B crumble, C shot, E grapple, F bomb). A t
     is ignored when its block word no longer matches the level data (another state of the room).
   The debug log says when a room with rules or fixes is entered; `tools/gpu-ppu-test` with `STEREO_QUADS=1` marks the
   quads "(set by hand)" and `STEREO_PLANES` splits a frame by plane.
+- `source/sm_sprite_prio.inc` (`SM_SPRITE_CAP(room, cap)`, written by hand: the workbench never touches it) draws the
+  sprites of a room as of OAM priority `cap` at most, so walls given tile priority 1 cover a boss of priority 3.
 - Not yet: sprites by enemy (`SM_SPRITE_PLANE`); the room's enemies and PLMs in the viewer; scene recordings and dumps
   as extra views (mzm has them). Rooms whose layer scrolls on so many lines that the GPU renderer composes its rows on
   the CPU (it never has, on the console) fall back to the CPU renderer while they have tile fixes.

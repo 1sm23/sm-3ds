@@ -55,6 +55,20 @@ static const TileFix kPrios[] = {
 #undef SM_LAYER_PLANE
 enum { kPrioCount = (int)(sizeof(kPrios) / sizeof(kPrios[0])) - 1 };
 
+typedef struct { uint16_t room; uint8_t cap; } SpriteCap;
+#define SM_SPRITE_CAP(room, cap) { room, cap },
+static const SpriteCap kSpriteCaps[] = {
+#include "sm_sprite_prio.inc"
+  { 0, 3 }
+};
+#undef SM_SPRITE_CAP
+
+int SmPlanes_SpriteCap(void) {
+  for (int i = 0; kSpriteCaps[i].room; i++)
+    if (kSpriteCaps[i].room == room_ptr) return kSpriteCaps[i].cap;
+  return 3;
+}
+
 int SmPlanes_RuleCount(void) { return (int)(sizeof(kRules) / sizeof(kRules[0])) - 1; }
 
 int SmPlanes_LayerRule(int layer, int prio) {
