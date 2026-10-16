@@ -92,8 +92,9 @@ frame by frame. Consequences:
 
 ### Releases (installer on GitHub)
 
-`.github/workflows/build-release.yml` builds the CIA on any `v*` tag push (and
-on manual dispatch) and publishes a GitHub Release with the CIA and a QR code.
+`.github/workflows/build-release.yml` builds the CIA and the `.3dsx` on any `v*` tag push (and
+on manual dispatch) and publishes a GitHub Release with both and a QR code (PLAN P4.20: the 3dsx updates
+itself from the release's `.3dsx`, `source/hb_install.c`).
 The channel depends on whether `main` can reach the tagged commit:
 
 | Built from | Channel |
@@ -206,7 +207,8 @@ through `build/build_config.h`, so switching it needs no clean. See
 `./build_3ds.sh` (`tools/build_3ds.py`, from mzm) wraps the same steps: it
 can scan the LAN for the console's FTP server (port
 5000) and upload the CIA as `cias/sm-3ds-<version>.cia`. `--mode debug|prod`
-(debug by default), `--ftp [IP]`, `--no-ftp`, `--clean`, `--dry-run`; no flags =
+(debug by default), `--ftp [IP]`, `--no-ftp`, `--clean`, `--dry-run`, `--3dsx` (the Homebrew Launcher build;
+with `--install`, for a game opened as a 3dsx); no flags =
 interactive menu. The last IP
 is kept in `.3ds_ftp_ip` (gitignored).
 
@@ -224,7 +226,7 @@ room, `tools/stereo-test/run.sh` checks the stereo depth mapping (no ROM), `./ru
 `tools/game-text/` (README) finds a screen's text for the game's translation, `tools/scene-rec/decode.py` turns a scene recording from the console into PNGs/mp4,
 `tools/auto-bomb-test/run.sh` checks the automatic bomb jump climbs three shafts, `tools/perf-csv/analyze.py FILE.csv` summarises a PERF RECORDER recording (fps, a steady frame, tile events, what the frames over budget were doing),
 `tools/sm-link/` drives a running debug build from the PC over its FTP server (below, "The console in the loop"),
-`tools/update-mock-server.py` serves a fake releases list (with notes) so the updater can be tried without publishing: put its URL in `update_url.txt` in the data folder, and do not accept the install
+`tools/update-mock-server.py` serves a fake releases list (with notes) so the updater can be tried without publishing: put its URL in `update_url.txt` in the data folder, and do not accept the install of a CIA (`--3dsx` serves the Homebrew Launcher build, whose install only replaces its own file)
 (see `docs/debug-tools.md`). Installing on the owner's console: FBI's FTP server, `curl -T
 output/SuperMetroid3DSPort.cia ftp://<3ds-ip>:5000/cias/sm-3ds-dev.cia`; files from the
 console come back the same way (`/3ds/Super Metroid 3DS/debug/`, Luma dumps in

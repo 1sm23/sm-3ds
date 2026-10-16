@@ -75,6 +75,12 @@ You need a 3DS with custom firmware (e.g. Luma3DS) and FBI or another CIA instal
    game shows an error screen with the expected hash if no valid ROM is found.
 4. Start "Super Metroid 3DS Port" from the HOME menu.
 
+**Homebrew Launcher instead of a CIA:** every release also has `sm-3ds-<version>.3dsx`. Copy it to
+`sdmc:/3ds/` (any name), put the ROM in the same folder as in step 3 and open it from the Homebrew
+Launcher. Saves and settings are the same files as the CIA's. Its updater (OPTIONS -> UPDATES)
+downloads the new `.3dsx` over the old one and starts it again (with Luma3DS; with another
+launcher it quits to it and you open it again); it never installs anything as a title.
+
 Everything else the game writes lives in the same folder:
 
 | Path | What |
@@ -145,6 +151,7 @@ Or with make directly:
 ```sh
 make -j FULL_NATIVE=1 cia                              # release CIA
 make -j FULL_NATIVE=1 DEBUG_TOOLS=1 cia                # debug build with cheats/teleport
+make -j FULL_NATIVE=1 3dsx                             # the Homebrew Launcher build
 make -j FULL_NATIVE=1 ftp FTP_HOST=192.168.1.50        # build and upload via FTP
 ```
 

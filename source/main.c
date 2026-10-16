@@ -44,6 +44,7 @@
 #include "ui_lang.h"
 #include "build_config.h"
 #include "cia_install.h"
+#include "hb_install.h"
 #include "ftp_server.h"
 #include "scene_art.h"
 #if DEBUG_TOOLS
@@ -803,6 +804,7 @@ int main(int argc, char** argv) {
 
     hidScanInput();
     FtpServer_Tick();
+    HbInstall_MainTick();   // an install of the 3dsx closes the romfs here (hb_install.h)
 #if DEBUG_TOOLS
     {   // The FTP server was on when the game last ran (or a start found no Wi-Fi): try again every
         // ~2 s until it serves or the DEBUG TOOLS stop it.
@@ -827,9 +829,14 @@ int main(int argc, char** argv) {
     if (FtpServer_TakeRelaunch()) {   // SITE INSTALL put a new build in place: close as usual and let the system start it
       // The chainloader is run by libctru when the process exits (aptExit), after the whole teardown below. Jumping at
       // once (APT_DoApplicationJump) had the system close the game under its feet while the GPU was still in use, and
-      // the console froze (2026-10-12).
-      ExitStep("relaunching into the build just installed");
-      aptSetChainloaderToSelf();
+      // the console froze (2026-10-12). The Homebrew Launcher build goes through Luma's loader (hb_install.h), or
+      // back to the launcher without it.
+      if (HbInstall_IsHomebrew()) {
+        ExitStep(HbInstall_SetRelaunch() ? "relaunching the 3dsx just installed" : "quitting to the Homebrew Launcher after an install");
+      } else {
+        ExitStep("relaunching into the build just installed");
+        aptSetChainloaderToSelf();
+      }
       g_quit_request = true;
     }
     {
@@ -1235,7 +1242,7 @@ int main(int argc, char** argv) {
   hidExit();
   gfxExit();
   ExitStep("gfx closed");
-  romfsExit();
+  if (!HbInstall_RomfsClosed()) romfsExit();
   ExitStep("returning");
   if (g_exit_file) fclose(g_exit_file);
 

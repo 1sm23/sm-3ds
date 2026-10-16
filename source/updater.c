@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "updater.h"
+#include "hb_install.h"
 #include "net_service.h"
 #include "updater_parse.h"
 #include "version.h"
@@ -17,6 +18,7 @@ extern void Main_RequestQuit(void);   // main.c
 #define UPDATER_DEFAULT_URL "https://api.github.com/repos/tinaut1986/sm-3ds/releases?per_page=8"
 #define UPDATER_DIR "update"   // in the data folder, which is the working directory
 #define UPDATER_CIA_PATH UPDATER_DIR "/sm-update.cia"
+#define UPDATER_3DSX_PATH UPDATER_DIR "/sm-update.3dsx"   /* the Homebrew Launcher build */
 #define UPDATER_NOTES_PATH UPDATER_DIR "/notes.txt"   /* the last notes, for when there is no network */
 #define UPDATER_JSON_MAX (192 * 1024)
 #define UPDATER_CHUNK (64 * 1024)
@@ -38,6 +40,7 @@ static volatile bool sBusy = false;
 static volatile bool sKeptCia = false; /* failed install left the CIA on the SD */
 static volatile UpdPrompt sPrompt = UPD_PROMPT_NONE;
 static bool sBeta = false;
+static bool sHomebrew = false;   /* a .3dsx: updates by replacing the file, never through the installer */
 static char sRemoteTag[32] = "";
 static char sMessage[96] = "";
 static char sNotes[UPDATER_NOTES_MAX] = "";   /* under sTextLock */
@@ -245,7 +248,7 @@ static bool FileBegin(void* user, u32 total) {
         return false;
     }
     s->total = total;
-    s->file = fopen(UPDATER_CIA_PATH, "wb");
+    s->file = fopen(sHomebrew ? UPDATER_3DSX_PATH : UPDATER_CIA_PATH, "wb");
     if (!s->file) {
         Fail("CANNOT WRITE SD", 0);
         return false;
@@ -409,7 +412,7 @@ static bool DoCheck(void) {
         free(js.buf);
         return false;
     }
-    if (!Updater_PickRelease(js.buf, sBeta, &rel)) {
+    if (!Updater_PickRelease(js.buf, sBeta, sHomebrew ? ".3dsx" : ".cia", &rel)) {
         free(js.buf);
         Fail("NO RELEASE FOUND", 0);
         return false;
@@ -464,11 +467,30 @@ static void DoInstall(void) {
     sState = UPD_DOWNLOADING;
     SetMessage("%s", "");
 
-    rc = HttpGet(sRelease.cia_url, &sink);
+    rc = HttpGet(sRelease.asset_url, &sink);
     if (fs.file) fclose(fs.file);
     if (rc != 0) {
-        remove(UPDATER_CIA_PATH);
+        remove(sHomebrew ? UPDATER_3DSX_PATH : UPDATER_CIA_PATH);
         if (sState != UPD_ERROR) sState = UPD_ERROR;
+        return;
+    }
+
+    /* The Homebrew Launcher build: under it APT reports the launcher's host title, so the
+     * installer must not be touched (the fallback below deletes the running title). The new
+     * .3dsx simply takes the old one's place. */
+    if (sHomebrew) {
+        char error[64];
+
+        if (!HbInstall_File(UPDATER_3DSX_PATH, error, sizeof(error))) {
+            remove(UPDATER_3DSX_PATH);
+            for (char* c = error; *c; c++)
+                if (*c >= 'a' && *c <= 'z') *c = (char)(*c - 32);   /* the prompt's messages are capitals */
+            Fail(error, 0);
+            return;
+        }
+        sProgress = 100;
+        sState = UPD_INSTALLED;
+        sPrompt = UPD_PROMPT_ASK_RESTART;
         return;
     }
 
@@ -532,6 +554,7 @@ static void StartJob(UpdaterJob job) {
 void Updater_Init(bool auto_check, bool beta) {
     EnsureLock();
     sBeta = beta;
+    sHomebrew = HbInstall_IsHomebrew();
     mkdir(UPDATER_DIR, 0777);
     LoadNotesCache();
     if (auto_check) StartJob(JOB_AUTO_CHECK);
@@ -547,14 +570,18 @@ static void Install(void) {
     if (sState == UPD_AVAILABLE) StartJob(JOB_INSTALL);
 }
 
+/* The Homebrew Launcher build starts again through Luma's loader (hb_install.h); without it
+ * quitting goes back to the launcher, where the player opens the new file. */
 static void Restart(void) {
-    aptSetChainloaderToSelf();
+    if (!sHomebrew) aptSetChainloaderToSelf();
+    else HbInstall_SetRelaunch();
     Main_RequestQuit();
 }
 
 UpdState Updater_State(void) { return sState; }
 UpdPrompt Updater_Prompt(void) { return sPrompt; }
 bool Updater_KeptCia(void) { return sKeptCia; }
+bool Updater_QuitsToLauncher(void) { return sHomebrew && !HbInstall_CanRelaunch(); }
 
 void Updater_AnswerPrompt(bool yes) {
     switch (sPrompt) {

@@ -1,7 +1,8 @@
 #pragma once
 // Self-updater for the installed CIA, after ../mzm's (port_updater_3ds.c). Asks GitHub's
 // releases endpoint for the newest build, downloads its .cia to the data folder and installs
-// it with the system installer (am:net). Everything runs on a worker thread; the UI polls.
+// it with the system installer (am:net). The Homebrew Launcher build downloads the release's
+// .3dsx instead and puts it over the running file (hb_install.h). Everything runs on a worker thread; the UI polls.
 // The pure part (version comparison, release-list parsing) is updater_parse.c, host-tested
 // in tools/updater-test.
 
@@ -46,6 +47,9 @@ int Updater_Progress(void);            // 0..100 while DOWNLOADING
 const char *Updater_RemoteTag(void);   // "" until a check succeeded (this run, or an earlier one: update/notes.txt)
 const char *Updater_Message(void);     // a short error text
 bool Updater_KeptCia(void);            // a failed install left update/sm-update.cia for FBI
+// The Homebrew Launcher build without Luma's loader: the update replaces the .3dsx
+// (hb_install.h) but "restart" can only quit to the launcher, so the prompt says to open it again.
+bool Updater_QuitsToLauncher(void);
 // The "what's new" text of the last successful check: the releases newer than this build, or
 // (when up to date) the latest published ones; "== vX.Y.Z ==" lines and "- " lines, each ending
 // in '\n'. Copies at most cap-1 bytes into `out` and returns the length (0 until a check

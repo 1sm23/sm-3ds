@@ -2260,7 +2260,8 @@ static void DrawUpdatePrompt(Surface s) {
     break;
   }
   case UPD_PROMPT_ASK_RESTART:
-    UiDrawTextCentered(s, SCREEN_W / 2, 100, COL_TITLE, Tr(kStrUpdRestart));
+    // A 3dsx with no Luma loader to start it again: YES quits to the Homebrew Launcher.
+    UiDrawTextCentered(s, SCREEN_W / 2, 100, COL_TITLE, Tr(Updater_QuitsToLauncher() ? kStrUpdReopen : kStrUpdRestart));
     UiDrawBoxLabel(s, YesRect(), COL_BOX, COL_BOX_EDGE, COL_GOOD, Pressed(YesRect()), Tr(kStrYes));
     UiDrawBoxLabel(s, NoRect(), COL_BOX, COL_BOX_EDGE, COL_TEXT, Pressed(NoRect()), Tr(kStrNo));
     break;

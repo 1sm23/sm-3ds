@@ -120,6 +120,15 @@ says so on any tab, in a box in the middle (`NEW BUILD`: `RECEIVING THE INSTALLE
 A CIA of another title is refused. The first build with this feature has to arrive by FBI or
 ftpd as before: there is no server to talk to until it runs once.
 
+The game opened as a `.3dsx` from the Homebrew Launcher takes a `.3dsx` instead (a CIA is refused
+there: the installer only sees the launcher's host title). `SITE INSTALL <path>.3dsx` moves it over
+the running file (the path the launcher started, `argv[0]`; the old one is kept as `.bak` until the
+new one is in place; the romfs, which is that file, is closed first) and the game relaunches 10 s
+later through Luma's loader (`hb:ldr`, as the Homebrew Launcher opens an app). Without Luma it quits
+to the launcher instead (`CLOSING IN 7 S`). `./build_3ds.sh --3dsx --install IP` builds the 3dsx,
+uploads it to `/3ds/Super Metroid 3DS/update/dev.3dsx` and installs it. A file that does not start
+with the 3dsx magic is refused.
+
 ### Remote control
 
 While the server runs, the PC can drive the game through SITE commands
