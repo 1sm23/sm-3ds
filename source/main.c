@@ -780,6 +780,7 @@ int main(int argc, char** argv) {
               g_audio_ok ? "open" : "FAILED", kAudioRate, kAudioBufFrames, kAudioBufs);
     if (!g_audio_ok) Debug_Log("audio failed: ndspInit %08lX", (unsigned long)g_ndsp_rc);
     Debug_Log("core 1 time limit: asked 30 -> %08lX; granted %lu %%", (unsigned long)core1_rc, (unsigned long)core1_limit);
+    Debug_LogStorage();
   }
 
   PpuBeginDrawing(snes->snes_ppu, g_pixels, 256 * 4, 0);
