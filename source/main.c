@@ -284,6 +284,17 @@ static float TicksToMs(u64 ticks) {
   return (float)((double)ticks * 1000.0 / SYSCLOCK_ARM11);
 }
 
+#if DEBUG_TOOLS
+// One log line per save or load state: where a slow one spends its time (state file, screenshot, RA progress).
+static void LogStateTiming(const char *what, int slot, bool ok, const char *state_file, u64 t_state, u64 t_shot,
+                           u64 t_ra) {
+  struct stat st;
+  const long size = stat(state_file, &st) == 0 ? (long)st.st_size : -1;
+  Debug_Log("state %s: slot %d ok=%d size=%ld state=%.1fms shot=%.1fms ra=%.1fms", what, slot, ok, size,
+            TicksToMs(t_state), TicksToMs(t_shot), TicksToMs(t_ra));
+}
+#endif
+
 // gfxFlushBuffers without GSP (see FlushCache in gpu_ppu_3ds.c: the GSP request waits for core 1), and only
 // for the screens about to be swapped.
 static void FlushScreen(gfxScreen_t screen, gfx3dSide_t side) {
@@ -900,10 +911,20 @@ int main(int argc, char** argv) {
       GameTextScreens_PutBack();
       char state_file[48];
       snprintf(state_file, sizeof(state_file), "saves/save%d.sav", g_ui.save_slot);
+#if DEBUG_TOOLS
+      const u64 ts0 = svcGetSystemTick();
+#endif
       const bool ok = RtlSaveLoadFile(kSaveLoad_Save, state_file, g_ui.save_slot);
-      BottomUi_StateSaved(g_ui.save_slot, ok, ok && CaptureStateShot() ? g_state_shot : NULL);
+#if DEBUG_TOOLS
+      const u64 ts1 = svcGetSystemTick();
+#endif
+      BottomUi_StateSaved(g_ui.save_slot, ok, ok && CaptureStateShot() ? g_state_shot : NULL);   // writes the screenshot
+#if DEBUG_TOOLS
+      const u64 ts2 = svcGetSystemTick();
+#endif
       if (ok) RetroAch_StateSaved(g_ui.save_slot);
 #if DEBUG_TOOLS
+      LogStateTiming("save", g_ui.save_slot, ok, state_file, ts1 - ts0, ts2 - ts1, svcGetSystemTick() - ts2);
       DebugLink_StateDone(ok);
 #endif
     }
@@ -911,10 +932,17 @@ int main(int argc, char** argv) {
       BottomUi_Busy();
       char state_file[48];
       snprintf(state_file, sizeof(state_file), "saves/save%d.sav", g_ui.save_slot);
+#if DEBUG_TOOLS
+      const u64 tl0 = svcGetSystemTick();
+#endif
       const bool ok = RtlSaveLoadFile(kSaveLoad_Load, state_file, g_ui.save_slot);
+#if DEBUG_TOOLS
+      const u64 tl1 = svcGetSystemTick();
+#endif
       BottomUi_StateLoaded(g_ui.save_slot, ok);
       if (ok) RetroAch_StateLoaded(g_ui.save_slot);
 #if DEBUG_TOOLS
+      LogStateTiming("load", g_ui.save_slot, ok, state_file, tl1 - tl0, 0, svcGetSystemTick() - tl1);
       DebugLink_StateDone(ok);
 #endif
     }
