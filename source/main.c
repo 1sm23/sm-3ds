@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <malloc.h>
 #include <3ds.h>
 
 #include "src/snes/ppu.h"
@@ -683,6 +684,8 @@ static void LogPeriodic(const UiPerf *p) {
               TicksToMs(st->t_lines), TicksToMs(st->t_diff), TicksToMs(st->t_sprites), TicksToMs(st->t_bg),
               TicksToMs(st->t_shadow), g_gpu_frame.band_count, g_gpu_frame.quad_count);
   }
+  Debug_Log("memory: heap free %lu KB, linear free %lu KB", (unsigned long)(mallinfo().fordblks >> 10),
+            (unsigned long)(linearSpaceFree() >> 10));
   Debug_Log("audio: block %.1f ms (dsp %.1f spc %.1f lock %.1f) | callbacks %d, slowest %.1f ms, slower than "
             "their buffer %d, late starts %d, underruns %d",
             p->audio_ms, p->audio_part_ms[2], p->audio_part_ms[1], p->audio_part_ms[0], g_cb_count, g_cb_max_ms,
@@ -777,6 +780,7 @@ int main(int argc, char** argv) {
               g_audio_ok ? "open" : "FAILED", kAudioRate, kAudioBufFrames, kAudioBufs);
     if (!g_audio_ok) Debug_Log("audio failed: ndspInit %08lX", (unsigned long)g_ndsp_rc);
     Debug_Log("core 1 time limit: asked 30 -> %08lX; granted %lu %%", (unsigned long)core1_rc, (unsigned long)core1_limit);
+    Debug_LogStorage();
   }
 
   PpuBeginDrawing(snes->snes_ppu, g_pixels, 256 * 4, 0);
@@ -1173,6 +1177,16 @@ int main(int argc, char** argv) {
     float work_ms = TicksToMs(now - frame_start);
     perf.frame_ms += (work_ms - perf.frame_ms) * 0.1f;
     px.ui_ms = TicksToMs(t_ui), px.present_ms = TicksToMs(t_pres), px.present_wait_ms = UiDraw_TakeWaitMs();
+#if DEBUG_TOOLS
+    // A frame that took over 100 ms, with where the time went (at most 30 lines per run).
+    static int slow_logged;
+    if (work_ms > 100.0f && slow_logged < 30) {
+      slow_logged++;
+      Debug_Log("slow frame: %.0f ms | logic %.1f draw %.1f ui %.1f present %.1f (wait %.1f) | heap free %lu KB, linear free %lu KB",
+                work_ms, TicksToMs(t_logic), TicksToMs(t_draw), TicksToMs(t_ui), TicksToMs(t_pres), px.present_wait_ms,
+                (unsigned long)(mallinfo().fordblks >> 10), (unsigned long)(linearSpaceFree() >> 10));
+    }
+#endif
     if (!g_ui.paused)
       Debug_PerfFrame(TicksToMs(t_logic), TicksToMs(t_draw), perf.audio_ms, work_ms, presented, perf.audio_part_ms, &px);
     float window_ms = TicksToMs(now - fps_window_start);
