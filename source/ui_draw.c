@@ -107,8 +107,8 @@ void UiFrameRect(Surface s, int x, int y, int w, int h, uint32_t c) {
   UiFillRect(s, x + w - 1, y, 1, h, c);
 }
 
-// The next character of a UTF-8 string, as a code point (Latin-1 for the font), moving
-// *str past it. A malformed byte reads as itself.
+// The next character of a UTF-8 string, as a code point, moving *str past it.
+// A malformed byte reads as itself.
 static unsigned NextChar(const char **str) {
   const unsigned char *p = (const unsigned char *)*str;
   if ((p[0] & 0xE0) == 0xC0 && (p[1] & 0xC0) == 0x80) {
@@ -117,44 +117,54 @@ static unsigned NextChar(const char **str) {
   }
   if ((p[0] & 0xF0) == 0xE0 && (p[1] & 0xC0) == 0x80 && (p[2] & 0xC0) == 0x80) {
     *str += 3;
-    return 0xFFFF;   // beyond the font
+    return (p[0] & 0x0F) << 12 | (p[1] & 0x3F) << 6 | (p[2] & 0x3F);
+  }
+  if ((p[0] & 0xF8) == 0xF0 && (p[1] & 0xC0) == 0x80 && (p[2] & 0xC0) == 0x80 &&
+      (p[3] & 0xC0) == 0x80) {
+    *str += 4;
+    return (p[0] & 0x07) << 18 | (p[1] & 0x3F) << 12 | (p[2] & 0x3F) << 6 | (p[3] & 0x3F);
   }
   *str += 1;
   return p[0];
 }
 
 int UiTextWidth(const char *str, int scale) {
-  int n = 0;
-  while (*str) NextChar(&str), n++;
-  return n * kUiAdvance * scale;
+  int width = 0;
+  while (*str) width += UiFont_Advance(NextChar(&str)) * scale;
+  return width;
 }
 
 void UiDrawText(Surface s, int x, int y, int scale, uint32_t c, const char *str) {
-  for (; *str; x += kUiAdvance * scale) {
+  for (; *str;) {
     const unsigned ch = NextChar(&str);
-    const uint8_t *glyph = ch <= 0xFF ? UiFont_Glyph((unsigned char)ch) : NULL;
-    if (!glyph) continue;
-    const uint8_t *mark = UiFont_Mark((unsigned char)ch);   // rare: drawn the slow way
+    const uint8_t *glyph = ch <= 0xFF ? UiFont_Glyph((unsigned char)ch) : UiFont_CjkGlyph(ch);
+    const int glyph_w = ch <= 0xFF ? kUiGlyphW : 7;
+    const int glyph_h = ch <= 0xFF ? kUiGlyphH : 7;
+    const int advance = UiFont_Advance(ch);
+    if (!glyph) { x += advance * scale; continue; }
+    const uint8_t *mark = ch <= 0xFF ? UiFont_Mark((unsigned char)ch) : NULL;
     for (int row = 0; mark && row < 2; row++)
-      for (int col = 0; col < kUiGlyphW; col++)
+      for (int col = 0; col < glyph_w; col++)
         if (mark[row] & (1u << (kUiGlyphW - 1 - col)))
           UiFillRect(s, x + col * scale, y - (kUiMarkRise - row) * scale, scale, scale, c);
     if (scale == 1) {
       // Common case: write pixels directly, no per-pixel rectangle clipping.
-      if (x < 0 || x + kUiGlyphW > s.w || y < 0 || y + kUiGlyphH > s.h) continue;
+      if (x < 0 || x + glyph_w > s.w || y < 0 || y + glyph_h > s.h) { x += advance; continue; }
       const int r0 = g_clip_y0 > y ? g_clip_y0 - y : 0;
-      const int r1 = g_clip_y1 < y + kUiGlyphH ? g_clip_y1 - y : kUiGlyphH;
-      for (int col = 0; col < kUiGlyphW; col++) {
+      const int r1 = g_clip_y1 < y + glyph_h ? g_clip_y1 - y : glyph_h;
+      for (int col = 0; col < glyph_w; col++) {
         uint32_t *px = s.px + (x + col) * s.h + (s.h - 1 - y);
         for (int row = r0; row < r1; row++)
-          if (glyph[row] & (1u << (kUiGlyphW - 1 - col))) px[-row] = c;
+          if (glyph[row] & (1u << (glyph_w - 1 - col))) px[-row] = c;
       }
+      x += advance;
       continue;
     }
-    for (int row = 0; row < kUiGlyphH; row++)
-      for (int col = 0; col < kUiGlyphW; col++)
-        if (glyph[row] & (1u << (kUiGlyphW - 1 - col)))
+    for (int row = 0; row < glyph_h; row++)
+      for (int col = 0; col < glyph_w; col++)
+        if (glyph[row] & (1u << (glyph_w - 1 - col)))
           UiFillRect(s, x + col * scale, y + row * scale, scale, scale, c);
+    x += advance * scale;
   }
 }
 

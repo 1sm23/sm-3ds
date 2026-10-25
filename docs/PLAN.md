@@ -774,6 +774,11 @@ Lessons from mzm that apply directly:
   *Done when:* the five languages load from files with the same pictures as today, and a sixth file dropped on the SD
   card shows up in both menus, checked on the console.
 
+- [x] **P4.21** Simplified Chinese translation and glyph support (owner's request, 2026-10-25). Added the full
+  `romfs/lang/zh.txt` translation and a compact generated CJK font used by the bottom UI, message boxes, menus,
+  intro text, pause screen, game-over screen, ending credits and HUD. `tools/lang-check` accepts and validates the
+  bundled Han characters. The fork still needs an Azahar-Plus run before merge.
+
 - [x] **P4.15** Modern control scheme (issue #32, owner's request; decided 2026-10-10). A CLASSIC / MODERN option
   (OPTIONS and a CLASSIC / MODERN row in the game's CONTROLLER SETTING MODE, a scrolling list that shows the modern buttons dim, `config.ini`); MODERN: B runs (until 2026-10-11 Samus always ran and B alone walked), L aims
   (up; Down with L held locks it down until Up or L is let go), R + X fires the missile kind SELECT chose (a power bomb in morph ball), R + B is the X-ray, R + Y the

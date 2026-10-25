@@ -24,6 +24,7 @@
 #include "src/sm_rtl.h"
 #include "src/snes/ppu.h"
 #include "src/snes/snes.h"
+#include "cjk_font.h"
 #include "ui_lang.h"
 
 enum { kVramWords = 0x8000 };
@@ -115,6 +116,13 @@ static void TileFromRows(Tile *t, const char *const *rows) {
     }
 }
 
+static void TileFromBits(Tile *t, const uint8_t *rows, uint8_t pen) {
+  memset(t, 0, sizeof(*t));
+  for (int y = 0; y < 8; y++)
+    for (int x = 0; x < 8; x++)
+      if (rows[y] & (1u << (7 - x))) t->px[y][x] = pen;
+}
+
 // ---- Fonts --------------------------------------------------------------------------------
 
 typedef struct {
@@ -186,7 +194,17 @@ static bool LetterTiles(const Font *f, uint16_t base, unsigned code, Tile out[2]
     return true;
   }
   const FontChar *c = FontFind(f, code);
-  if (!c) return false;
+  if (!c) {
+    const CjkGlyph *cjk = CjkFont_Find(code);
+    if (!cjk) return false;
+    if (f->h == 1) {
+      TileFromBits(&out[0], cjk->small, f->pen);
+    } else {
+      TileFromBits(&out[0], cjk->large, f->pen);
+      TileFromBits(&out[1], cjk->large + 8, f->pen);
+    }
+    return true;
+  }
   ReadTile(base, c->top, f->bpp, &out[0]);
   if (f->h == 2) ReadTile(base, c->bottom, f->bpp, &out[1]);
   return true;
@@ -342,6 +360,11 @@ static unsigned NextCode(const char **s) {
   if ((p[0] & 0xF0) == 0xE0 && (p[1] & 0xC0) == 0x80 && (p[2] & 0xC0) == 0x80) {   // 日本語
     *s += 3;
     return (p[0] & 0x0F) << 12 | (p[1] & 0x3F) << 6 | (p[2] & 0x3F);
+  }
+  if ((p[0] & 0xF8) == 0xF0 && (p[1] & 0xC0) == 0x80 && (p[2] & 0xC0) == 0x80 &&
+      (p[3] & 0xC0) == 0x80) {
+    *s += 4;
+    return (p[0] & 0x07) << 18 | (p[1] & 0x3F) << 12 | (p[2] & 0x3F) << 6 | (p[3] & 0x3F);
   }
   *s += 1;
   return p[0];
