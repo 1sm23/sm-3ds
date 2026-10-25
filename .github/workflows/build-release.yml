@@ -154,6 +154,7 @@ jobs:
             output/SuperMetroid3DSPort.3dsx
 
       - name: Create / update GitHub Release
+        if: github.event_name == 'push'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.vars.outputs.tag }}
