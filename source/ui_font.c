@@ -6,7 +6,17 @@
 // separate mark drawn above the glyph (UiFont_Mark), so it keeps its full height.
 #include <stddef.h>
 
+#include "cjk_font.h"
 #include "ui_font.h"
+
+const uint8_t *UiFont_CjkGlyph(unsigned code) {
+    const CjkGlyph *g = CjkFont_Find(code);
+    return g ? g->ui : NULL;
+}
+
+int UiFont_Advance(unsigned code) {
+    return UiFont_CjkGlyph(code) ? 8 : kUiAdvance;
+}
 
 const uint8_t *UiFont_Glyph(unsigned char c) {
     static const uint8_t digits[10][7] = {

@@ -54,12 +54,16 @@ What each section is (the notes in [`lang-template.txt`](lang-template.txt) give
 ## What the fonts can draw
 
 - **The game's screens and boxes:** capitals A-Z (lowercase is drawn as capitals), digits, common
-  punctuation, `¿` and `¡`, and the accented letters `ÁÀÂÃÄ ÉÈÊË ÍÌÎÏ ÓÒÔÕÖ ÚÙÛÜ Ñ Ç` (the accent is
-  drawn as a mark on the plain letter). The `(line)` rows use a small lowercase font with the same
-  accents.
-- **The bottom screen:** a 5x7 font with the same letters plus `ß` and `·`.
-- Any other letter (`Œ`, Cyrillic, Greek, kana...) is drawn as a blank. Another script needs its
-  glyphs drawn into the code first.
+  punctuation, the accented Latin letters, and the Simplified Chinese characters used by the
+  built-in `zh.txt` file. Chinese glyphs are compiled into `source/cjk_font.c` as compact 8x8
+  tiles; a character not present in that table is drawn as a blank.
+- **The bottom screen:** a 5x7 Latin font plus compact 7x7 Chinese glyphs with an 8 px advance.
+  The table contains every Han character used by the built-in translation.
+
+To add a Han character, use it in `romfs/lang/zh.txt`, then run
+`powershell -ExecutionPolicy Bypass -File tools/cjk-font/generate.ps1` on Windows. The script
+regenerates `source/cjk_font.c` from Microsoft YaHei; commit that generated file with the language
+file. Characters not included in the table remain blank.
 
 ## Starting a language
 

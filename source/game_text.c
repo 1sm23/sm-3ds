@@ -13,6 +13,7 @@
 #include "src/sm_rtl.h"
 #include "src/snes/ppu.h"
 #include "src/snes/snes.h"
+#include "cjk_font.h"
 #include "ui_lang.h"
 
 extern uint16 message_box_das0l_value;   // sm_85.c: bytes of the box's tilemap DMA
@@ -268,16 +269,24 @@ static const Glyph *FindGlyph(unsigned code) {
 
 // The glyph for `code` (with its accent, if any) in `rows`; its width, or -1 for a space,
 // 0 for a character the font does not have.
-static int GlyphRows(unsigned code, char rows[8][6]) {
+static int GlyphRows(unsigned code, char rows[8][9]) {
   if (code >= 'A' && code <= 'Z') code += 32;
   if (code == ' ') return -1;
   const char *mark = NULL;
   for (size_t i = 0; i < sizeof(kAccented) / sizeof(kAccented[0]); i++)
     if (kAccented[i].code == code || kAccented[i].code == code + 32) code = (unsigned char)kAccented[i].base, mark = kAccented[i].mark;
   const Glyph *g = FindGlyph(code);
-  if (!g) return 0;
-  for (int r = 0; r < 8; r++) snprintf(rows[r], 6, "%s", r == 0 && mark ? mark : g->rows[r]);
-  return g->w;
+  if (g) {
+    for (int r = 0; r < 8; r++) snprintf(rows[r], 9, "%s", r == 0 && mark ? mark : g->rows[r]);
+    return g->w;
+  }
+  const CjkGlyph *cjk = CjkFont_Find(code);
+  if (!cjk) return 0;
+  for (int r = 0; r < 8; r++) {
+    for (int x = 0; x < 8; x++) rows[r][x] = (cjk->small[r] & (1u << (7 - x))) ? '#' : '.';
+    rows[r][8] = 0;
+  }
+  return 8;
 }
 
 static unsigned NextCode(const char **s) {
@@ -285,6 +294,15 @@ static unsigned NextCode(const char **s) {
   if ((p[0] & 0xE0) == 0xC0 && (p[1] & 0xC0) == 0x80) {
     *s += 2;
     return (p[0] & 0x1F) << 6 | (p[1] & 0x3F);
+  }
+  if ((p[0] & 0xF0) == 0xE0 && (p[1] & 0xC0) == 0x80 && (p[2] & 0xC0) == 0x80) {
+    *s += 3;
+    return (p[0] & 0x0F) << 12 | (p[1] & 0x3F) << 6 | (p[2] & 0x3F);
+  }
+  if ((p[0] & 0xF8) == 0xF0 && (p[1] & 0xC0) == 0x80 && (p[2] & 0xC0) == 0x80 &&
+      (p[3] & 0xC0) == 0x80) {
+    *s += 4;
+    return (p[0] & 0x07) << 18 | (p[1] & 0x3F) << 12 | (p[2] & 0x3F) << 6 | (p[3] & 0x3F);
   }
   *s += 1;
   return p[0];
@@ -294,7 +312,7 @@ static int TextWidth(const char *s, int n) {
   const char *end = s + n;
   int w = 0, chars = 0;
   while (s < end) {
-    char rows[8][6];
+    char rows[8][9];
     const int gw = GlyphRows(NextCode(&s), rows);
     if (gw < 0) w += 3;
     else if (gw > 0) w += (chars++ ? 1 : 0) + gw;
@@ -406,8 +424,9 @@ static int Utf8Len(const char *s) {
 // Writes capitals `text` on box row `row` from column `x`, with `attr`.
 static void PutCapitals(Box *b, int row, int x, const char *text, uint16_t attr) {
   for (const char *s = text; *s && x < b->x1; x++) {
+    const unsigned code = NextCode(&s);
     char base;
-    const Mark mark = MarkOf(NextCode(&s), &base);
+    const Mark mark = MarkOf(code, &base);
     uint16_t e = attr | kTileFill;
     if (base >= 'A' && base <= 'Z') e = attr | (kTileA + base - 'A');
     else if (base == '.') e = attr | kTileDot;
@@ -417,6 +436,16 @@ static void PutCapitals(Box *b, int row, int x, const char *text, uint16_t attr)
     else if (base == '\'') {
       Tile t;
       ApostropheTile(&t);
+      PutNewTile(b, row, x, &t, attr);
+      continue;
+    }
+    else if (CjkFont_Find(code)) {
+      Tile t;
+      TileFill(&t, 3);
+      const CjkGlyph *g = CjkFont_Find(code);
+      for (int yy = 0; yy < 8; yy++)
+        for (int xx = 0; xx < 8; xx++)
+          if (g->small[yy] & (1u << (7 - xx))) t.px[yy][xx] = 1;
       PutNewTile(b, row, x, &t, attr);
       continue;
     }
@@ -559,7 +588,7 @@ static void InstructionRow(Box *b, int row, const char *format) {
       const bool before = p->block >= 0 || p->cell, after = i > 0;
       int px = before && after ? (n * 8 - w) / 2 : before ? n * 8 - w : 0, chars = 0;
       for (const char *s = p->text; s < p->text + p->len;) {
-        char rows[8][6];
+        char rows[8][9];
         const int gw = GlyphRows(NextCode(&s), rows);
         if (gw < 0) { px += 3; continue; }
         if (!gw) continue;

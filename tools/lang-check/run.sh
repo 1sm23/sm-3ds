@@ -14,7 +14,7 @@ S=$ROOT/sm
 gcc -O1 -fno-strict-aliasing -w -I"$S" -I"$ROOT/source" -I"$ROOT/third_party/sdl_keys" \
     -DSYSTEM_VOLUME_MIXER_AVAILABLE=0 -DFULL_NATIVE -no-pie -Wl,--unresolved-symbols=ignore-all \
     "$ROOT/source/game_text.c" "$ROOT/source/game_text_screens.c" "$ROOT/source/ui_lang.c" "$ROOT/source/lang_file.c" \
-    "$ROOT/source/ui_font.c" "$ROOT/tools/lang-check/lang_check.c" -o "$WORK/lang_check" -lm
+    "$ROOT/source/ui_font.c" "$ROOT/source/cjk_font.c" "$ROOT/tools/lang-check/lang_check.c" -o "$WORK/lang_check" -lm
 if [ $# -gt 0 ]; then
   exec "$WORK/lang_check" "$@"
 fi

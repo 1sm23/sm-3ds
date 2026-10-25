@@ -16,6 +16,7 @@
 #include <string.h>
 
 #include "game_text.h"
+#include "cjk_font.h"
 #include "lang_file.h"
 #include "ui_font.h"
 #include "ui_lang.h"
@@ -102,6 +103,10 @@ static unsigned NextCode(const char **s) {
     *s += 3;
     return (p[0] & 0x0F) << 12 | (p[1] & 0x3F) << 6 | (p[2] & 0x3F);
   }
+  if ((p[0] & 0xF8) == 0xF0 && p[1] && p[2] && p[3]) {
+    *s += 4;
+    return (p[0] & 0x07) << 18 | (p[1] & 0x3F) << 12 | (p[2] & 0x3F) << 6 | (p[3] & 0x3F);
+  }
   *s += 1;
   return p[0];
 }
@@ -127,6 +132,7 @@ static void Conversions(const char *s, char *out, size_t size) {
 // digits, the accented vowels, Ñ and Ç (as marks), and common punctuation.
 static bool GameCapital(unsigned c) {
   if (c == ' ' || (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) return true;
+  if (CjkFont_Find(c)) return true;
   if (strchr(".,!?'-():+#/&", (int)c) && c) return true;
   if (c == 0xBF || c == 0xA1) return true;   // ¿ ¡
   if (c >= 0xE0 && c <= 0xFE && c != 0xF7) c -= 0x20;
@@ -137,7 +143,7 @@ static bool GameCapital(unsigned c) {
   return false;
 }
 
-static bool UiChar(unsigned c) { return c == ' ' || (c <= 0xFF && UiFont_Glyph((unsigned char)c)); }
+static bool UiChar(unsigned c) { return c == ' ' || (c <= 0xFF && UiFont_Glyph((unsigned char)c)) || CjkFont_Find(c); }
 
 static bool UiSection(const char *s) {
   return !strcmp(s, "ui") || !strcmp(s, "items") || !strcmp(s, "beams") || !strcmp(s, "ammo") ||

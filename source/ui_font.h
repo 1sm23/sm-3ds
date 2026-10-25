@@ -6,6 +6,10 @@
 // (space and anything unknown: the caller just advances).
 const uint8_t *UiFont_Glyph(unsigned char c);
 
+// Simplified Chinese glyphs use a wider 7x7 bitmap and an 8 px advance.
+const uint8_t *UiFont_CjkGlyph(unsigned code);
+int UiFont_Advance(unsigned code);
+
 // An accented letter's accent: 2 rows of 5 bits, drawn on the rows kUiMarkRise and
 // kUiMarkRise - 1 above the glyph's top (a free row between). NULL = none.
 const uint8_t *UiFont_Mark(unsigned char c);
